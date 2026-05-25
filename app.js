@@ -1262,7 +1262,7 @@ window.runTaskCoach = async function() {
     
     prompt += `\nProvide ONE actionable, high-impact execution strategy for Kyle to build momentum.\n`;
     prompt += "CRITICAL RULES:\n";
-    prompt += "1. Keep the tip strictly UNDER 20 words.\n";
+    prompt += "1. Keep your coaching advice strictly between 20 and 40 words. Ensure it is a complete, grammatically sound, and punchy sentence.\n";
     prompt += "2. Address him directly using Bill Campbell's signature direct, warm, high-energy, and pragmatically supportive voice (no corporate buzzwords, focus on grit, trust, and execution).\n";
     prompt += "3. Focus strictly on energy optimization and focus preservation.\n";
     prompt += "4. Avoid any intro/outro fillers. Return ONLY the strategy text.";
@@ -1274,7 +1274,7 @@ window.runTaskCoach = async function() {
             contents: prompt,
             config: {
                 temperature: 0.7,
-                maxOutputTokens: 100
+                maxOutputTokens: 150
             }
         });
         
