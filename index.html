@@ -322,17 +322,48 @@
             <!-- 📊 6. VIBE CHECK REVIEW -->
             <div id="view-review" class="page-view w-full max-w-xl mx-auto space-y-6">
                 <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
-                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">EOD Review & Vibe Check</h3>
-                    <button id="btn-run-vibecheck" class="text-xs font-semibold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-4 py-1.5 rounded-full">
-                        Run New Vibe Check
-                    </button>
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Mindset & Vibe Analytics</h3>
                 </div>
                 
-                <div id="vibe-dashboard-container" class="space-y-6">
-                    <!-- Dynamic Vibe Check card (populated via JS) -->
-                    <div class="bg-white border border-cozy-500/10 rounded-3xl p-8 text-center space-y-4 shadow-sm">
-                        <span class="text-4xl block">🔍</span>
-                        <p class="text-cozy-700/60 text-sm font-light leading-relaxed">Click "Run New Vibe Check" above to compile all your tasks, blips, and journal reflections into an emotional intelligence and productivity summary!</p>
+                <!-- Vibe Sub-Tabs -->
+                <div class="flex space-x-1.5 border-b border-cozy-500/5 pb-2">
+                    <button onclick="toggleVibeTab('DAILY')" id="tab-vibe-daily" class="px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all select-none">Daily Vibe Check</button>
+                    <button onclick="toggleVibeTab('WEEKLY')" id="tab-vibe-weekly" class="px-4 py-2 text-xs font-semibold rounded-lg text-cozy-700/60 hover:text-cozy-500 transition-all select-none">Weekly Vibe Report</button>
+                </div>
+                
+                <!-- ================= A. DAILY VIBE SECTION ================= -->
+                <div id="vibe-daily-section" class="space-y-6">
+                    <div class="flex justify-between items-center bg-white border border-cozy-500/10 rounded-2xl p-4 shadow-sm">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-cozy-700/60 leading-none">Compile today's reflections</span>
+                        <button id="btn-run-vibecheck" class="text-xs font-bold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-4 py-1.5 rounded-full select-none">
+                            Run Vibe Check
+                        </button>
+                    </div>
+                    
+                    <div id="vibe-dashboard-container" class="space-y-6">
+                        <!-- Dynamic Vibe Check card (populated via JS) -->
+                        <div class="bg-white border border-cozy-500/10 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                            <span class="text-4xl block">🔍</span>
+                            <p class="text-cozy-700/60 text-sm font-light leading-relaxed">Click "Run Vibe Check" above to compile all your tasks, blips, and journal reflections into an emotional intelligence and productivity summary!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ================= B. WEEKLY VIBE SECTION ================= -->
+                <div id="vibe-weekly-section" class="hidden space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-200">
+                    <div class="flex justify-between items-center bg-white border border-cozy-500/10 rounded-2xl p-4 shadow-sm">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-cozy-700/60 leading-none">Compile past 7 days of growth</span>
+                        <button id="btn-run-weekly-vibe" class="text-xs font-bold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-4 py-1.5 rounded-full select-none">
+                            Compile Weekly Report
+                        </button>
+                    </div>
+                    
+                    <div id="vibe-weekly-container" class="space-y-6">
+                        <!-- Dynamic Weekly Report card (populated via JS) -->
+                        <div class="bg-white border border-cozy-500/10 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                            <span class="text-4xl block">📊</span>
+                            <p class="text-cozy-700/60 text-sm font-light leading-relaxed">Click "Compile Weekly Report" above to run our Google Gemini Performative Coach. This aggregates your last 7 days of logs into energy distribution percentages, road-block evaluations, and custom coach adjustments!</p>
+                        </div>
                     </div>
                 </div>
             </div>

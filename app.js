@@ -24,7 +24,9 @@ let state = {
     hideCompletedTasks: false,
     calendarYear: new Date().getFullYear(),
     calendarMonth: new Date().getMonth(),
-    selectedFilterDate: null
+    selectedFilterDate: null,
+    vibeTab: "DAILY",
+    weeklyReport: null
 };
 
 let supabaseClient = null;
@@ -182,6 +184,7 @@ window.navigate = function(viewName) {
         renderAARGrid();
     } else if (viewName === "REVIEW") {
         targetId = "view-review";
+        toggleVibeTab("DAILY"); // Reset to daily on opening review page
     } else if (viewName === "TASK_LIST") {
         targetId = "view-task-list";
         renderTaskChecklist();
@@ -946,6 +949,214 @@ async function runAIAgileCoach() {
 // ========== 10. VIBE CHECK SUMMARY LAYER ==
 // ==========================================
 
+// ==========================================
+// ========== 10. VIBE CHECK SUMMARY LAYER ==
+// ==========================================
+
+window.toggleVibeTab = function(tabName) {
+    state.vibeTab = tabName;
+    
+    const dailyBtn = document.getElementById("tab-vibe-daily");
+    const weeklyBtn = document.getElementById("tab-vibe-weekly");
+    const dailySec = document.getElementById("vibe-daily-section");
+    const weeklySec = document.getElementById("vibe-weekly-section");
+    
+    if (!dailyBtn || !weeklyBtn || !dailySec || !weeklySec) return;
+    
+    if (tabName === "DAILY") {
+        dailyBtn.className = "px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all select-none";
+        weeklyBtn.className = "px-4 py-2 text-xs font-semibold rounded-lg text-cozy-700/60 hover:text-cozy-500 transition-all select-none";
+        dailySec.classList.remove("hidden");
+        weeklySec.classList.add("hidden");
+    } else {
+        weeklyBtn.className = "px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all select-none";
+        dailyBtn.className = "px-4 py-2 text-xs font-semibold rounded-lg text-cozy-700/60 hover:text-cozy-500 transition-all select-none";
+        dailySec.classList.add("hidden");
+        weeklySec.classList.remove("hidden");
+        renderCachedWeeklyReport();
+    }
+};
+
+function getWeeklyLogs() {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    
+    const jList = state.journals.filter(j => new Date(j.timestamp).getTime() >= cutoff);
+    const tList = state.tasks.filter(t => new Date(t.timestamp).getTime() >= cutoff);
+    const bList = state.blips.filter(b => new Date(b.timestamp).getTime() >= cutoff);
+    const aList = state.aars.filter(a => new Date(a.timestamp).getTime() >= cutoff);
+    
+    return {
+        journals: jList.map(j => j.content).join("\n- "),
+        tasks: tList.map(t => `${t.name} (Category: ${t.category}, Completed: ${t.completed})`).join("\n- "),
+        blips: bList.map(b => b.content).join("\n- "),
+        aars: aList.map(a => `What went right: ${a.went_right} | What went wrong: ${a.went_wrong} | Next steps: ${a.next_steps}`).join("\n- ")
+    };
+}
+
+async function compileWeeklyVibeReport() {
+    const apiKey = state.gemini_api_key;
+    const container = document.getElementById("vibe-weekly-container");
+    
+    if (!apiKey) {
+        alert("⚠️ Please configure your Gemini API Key in Settings (⚙️) to run the Weekly Vibe Report!");
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="bg-white border border-cozy-500/10 rounded-3xl p-8 flex flex-col items-center justify-center space-y-4 shadow-sm">
+            <div class="custom-spinner"></div>
+            <p class="text-xs text-cozy-700/60 italic">Performing EOD weekly mindset & agile performance synthesis...</p>
+        </div>
+    `;
+    
+    const logs = getWeeklyLogs();
+    
+    let prompt = `You are a high-level performance psychologist, agile team coach, and emotional intelligence researcher doing a comprehensive "Weekly Vibe Report" for: ${state.username}.\n\n`;
+    prompt += "Here is the raw context of all entries Kyle logged over the last 7 days:\n\n";
+    prompt += `--- DEEP JOURNALS ---\n- ${logs.journals || 'None'}\n\n`;
+    prompt += `--- DYNAMIC TASKS CHECKLIST ---\n- ${logs.tasks || 'None'}\n\n`;
+    prompt += `--- QUICK IDEATION THOUGHTS (BLIPS) ---\n- ${logs.blips || 'None'}\n\n`;
+    prompt += `--- AFTER ACTION REVIEWS (AAR LOGS) ---\n- ${logs.aars || 'None'}\n\n`;
+    
+    prompt += "Analyze these weekly inputs for emotional frequency, work-life focus balance, and recurring cognitive blockers. Provide a structured response in JSON format containing exactly:\n";
+    prompt += "1. 'weekly_vibe_score': A creative state of mind description (e.g. 'HIGH-VIBRATION COGNITIVE FLOW', 'ACTION-HEAVY BURN FRICTION', 'CALM NATURAL BALANCE').\n";
+    prompt += "2. 'work_percentage': An integer (0-100) estimating their focus on Work tasks and topics this week.\n";
+    prompt += "3. 'personal_percentage': An integer (0-100) estimating their focus on Personal tasks, self-reflection, and mindfulness.\n";
+    prompt += "4. 'ideas_percentage': An integer (0-100) estimating their focus on creativity, ideas, and future scaling. (Ensure work, personal, and ideas percentages add up to exactly 100!).\n";
+    prompt += "5. 'cognitive_friction': A 2-sentence summary of the main subconscious blockers or bottlenecks they encountered.\n";
+    prompt += "6. 'coach_letter': A beautiful, empathy-rich, encouraging narrative letter addressing Kyle directly (under 120 words). Validate his weekly journey, celebrate his specific wins, and give him one key intention adjustment for the coming week.\n";
+    
+    try {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: 'OBJECT',
+                    properties: {
+                        weekly_vibe_score: { type: 'STRING' },
+                        work_percentage: { type: 'INTEGER' },
+                        personal_percentage: { type: 'INTEGER' },
+                        ideas_percentage: { type: 'INTEGER' },
+                        cognitive_friction: { type: 'STRING' },
+                        coach_letter: { type: 'STRING' }
+                    },
+                    required: ['weekly_vibe_score', 'work_percentage', 'personal_percentage', 'ideas_percentage', 'cognitive_friction', 'coach_letter']
+                }
+            }
+        });
+        
+        const report = JSON.parse(response.text.trim());
+        state.weeklyReport = report;
+        localStorage.setItem("vibe_weekly_report", JSON.stringify(report));
+        
+        renderWeeklyReportUI(report);
+    } catch (e) {
+        console.error("Weekly Vibe Report API Error:", e);
+        container.innerHTML = `
+            <div class="bg-white border border-red-500/10 rounded-2xl p-6 text-center space-y-2 shadow-sm">
+                <span class="text-2xl">⚠️</span>
+                <p class="text-xs text-cozy-700 leading-relaxed font-light">Unable to compile your Weekly Vibe Report. Please check your Gemini API Key in settings. (Error: ${e.message || e})</p>
+            </div>
+        `;
+    }
+}
+
+function renderCachedWeeklyReport() {
+    const container = document.getElementById("vibe-weekly-container");
+    if (!container) return;
+    
+    const cached = localStorage.getItem("vibe_weekly_report");
+    if (cached) {
+        const report = JSON.parse(cached);
+        state.weeklyReport = report;
+        renderWeeklyReportUI(report);
+    }
+}
+
+function renderWeeklyReportUI(report) {
+    const container = document.getElementById("vibe-weekly-container");
+    if (!container) return;
+    
+    container.innerHTML = `
+        <!-- 1. Frequency Score Card -->
+        <div class="bg-white border border-cozy-500/10 rounded-3xl p-6 text-center space-y-2 relative overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div class="absolute inset-0 bg-gradient-to-br from-cozy-500/[0.03] to-transparent"></div>
+            <span class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest block">Weekly Frequency State</span>
+            <h4 class="text-xl font-extrabold text-cozy-700 tracking-tight serif-font italic">${report.weekly_vibe_score}</h4>
+        </div>
+        
+        <!-- 2. Energy Distribution Progress bars -->
+        <div class="bg-white border border-cozy-500/10 rounded-3xl p-6 space-y-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <span class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest block">Weekly Energy Distribution</span>
+            
+            <div class="space-y-3">
+                <!-- Work -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs font-semibold text-cozy-700">
+                        <span class="flex items-center">💼 Work Focus</span>
+                        <span>${report.work_percentage}%</span>
+                    </div>
+                    <div class="w-full bg-cozy-50 h-2 rounded-full overflow-hidden border border-cozy-500/5">
+                        <div class="bg-[#5C8CA6] h-full rounded-full transition-all duration-500 animate-pulse" style="width: ${report.work_percentage}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Personal -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs font-semibold text-cozy-700">
+                        <span class="flex items-center">🏡 Personal Reflection</span>
+                        <span>${report.personal_percentage}%</span>
+                    </div>
+                    <div class="w-full bg-cozy-50 h-2 rounded-full overflow-hidden border border-cozy-500/5">
+                        <div class="bg-[#6C9372] h-full rounded-full transition-all duration-500 animate-pulse" style="width: ${report.personal_percentage}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Ideas -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs font-semibold text-cozy-700">
+                        <span class="flex items-center">💡 Idea Generation</span>
+                        <span>${report.ideas_percentage}%</span>
+                    </div>
+                    <div class="w-full bg-cozy-50 h-2 rounded-full overflow-hidden border border-cozy-500/5">
+                        <div class="bg-[#E2995D] h-full rounded-full transition-all duration-500 animate-pulse" style="width: ${report.ideas_percentage}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 3. Cognitive Friction card -->
+        <div class="bg-white border border-[#E07A5F]/15 rounded-3xl p-6 space-y-2 shadow-sm relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div class="absolute right-0 top-0 w-16 h-16 bg-[#E07A5F]/5 rounded-full blur-xl"></div>
+            <span class="text-[10px] font-bold text-[#E07A5F] uppercase tracking-widest block">Subconscious Friction & Blockers</span>
+            <p class="text-xs text-cozy-700 leading-relaxed font-light italic">${report.cognitive_friction}</p>
+        </div>
+        
+        <!-- 4. Premium Envelope Coach Letter -->
+        <div class="bg-cozy-50 border border-cozy-500/10 rounded-3xl p-6 space-y-4 shadow-sm relative overflow-hidden text-left animate-in fade-in slide-in-from-bottom-2 duration-350">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-cozy-500/[0.02] rounded-full blur-2xl"></div>
+            <div class="flex items-center space-x-2 border-b border-cozy-500/10 pb-3">
+                <span class="text-xl">✉️</span>
+                <div class="space-y-0.5">
+                    <span class="block text-[10px] font-bold text-cozy-500 uppercase tracking-widest leading-none">Weekly Intentions Letter</span>
+                    <span class="block text-[8px] text-cozy-700/50 uppercase tracking-widest font-semibold leading-none">From: AI Agile Performance Coach</span>
+                </div>
+            </div>
+            <p class="text-xs text-cozy-700 leading-relaxed font-light italic whitespace-pre-line">
+                Dear ${state.username},
+                
+                ${report.coach_letter}
+                
+                Warmly,
+                Your Agile Coach 🤖
+            </p>
+        </div>
+    `;
+}
+
 async function compileVibeCheck() {
     const apiKey = state.gemini_api_key;
     const container = document.getElementById("vibe-dashboard-container");
@@ -1280,6 +1491,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     document.getElementById("btn-aar-save").onclick = handleSaveAAR;
     document.getElementById("btn-run-vibecheck").onclick = compileVibeCheck;
+    document.getElementById("btn-run-weekly-vibe").onclick = compileWeeklyVibeReport;
     document.getElementById("btn-export-sheets").onclick = handleExportSheets;
     
     // Calendar Month Navigation Buttons
