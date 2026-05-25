@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="only light">
+    <meta name="theme-color" content="#FAF7F2">
+    <title>The Daily Vibe - Cozy Personal Sanctuary</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cozy: {
+                            50: '#FAF7F2',
+                            100: '#F3EBE1',
+                            200: '#E6D7C8',
+                            300: '#D9C2AF',
+                            500: '#D97A5F', /* Terracotta */
+                            700: '#1D1412'  /* Cocoa (Darkened from #3A2E2B for premium legibility) */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Style Sheet with Cache Buster -->
+    <link rel="stylesheet" href="styles.css?v=1.3">
+    
+    <!-- Supabase JS Client & Google GenAI SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="safe-area-inset py-4 md:py-8 bg-cozy-50 text-cozy-700">
+
+    <div class="w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center space-y-4">
+        
+        <!-- ================= HEADER TOP BAR ================= -->
+        <header class="w-full py-4 flex justify-between items-center z-40 bg-cozy-50/90 backdrop-blur-md border-b border-cozy-500/10 sticky top-0">
+            <div class="flex items-center space-x-2">
+                <button id="btn-info" class="p-2 text-cozy-700/60 hover:text-cozy-500 transition-colors" title="Info & Guide">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.444 1.103m0 0a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0z" />
+                    </svg>
+                </button>
+                <h1 id="logo-home" class="text-xl serif-font italic font-bold cursor-pointer text-cozy-500 hover:opacity-75 transition-opacity">
+                    The Daily Vibe
+                </h1>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <!-- Navigation Home Button (Hidden on Home screen) -->
+                <button id="btn-header-home" class="hidden text-xs font-semibold text-cozy-700/70 hover:text-cozy-500 transition-all bg-cozy-100 border border-cozy-500/10 px-3.5 py-1.5 rounded-full">
+                    ← Home
+                </button>
+                
+                <!-- Dynamic Logged-in User Badge -->
+                <div class="bg-white border border-cozy-500/10 rounded-full px-4 py-1.5 text-xs font-medium flex items-center space-x-1.5 shadow-sm text-cozy-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cozy-500 animate-pulse"></span>
+                    <span id="header-user-tag">👤 User: Kyle</span>
+                </div>
+                
+                <!-- Settings Button (Gear Icon) -->
+                <button id="btn-settings" class="p-2 text-cozy-700/60 hover:text-cozy-500 transition-colors" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- ================= MAIN VIEWPORT CONTAINERS ================= -->
+        <main class="w-full flex flex-col justify-start py-4 z-10">
+            
+            <!-- 🏠 1. HOME VIEW -->
+            <div id="view-home" class="page-view active w-full flex flex-col justify-start space-y-6">
+                
+                <!-- 🌅 TIME-BASED GREETING & DAILY PROMPT BANNER -->
+                <div class="w-full bg-white border border-cozy-500/10 p-6 rounded-3xl shadow-sm text-left relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-cozy-500/5 to-transparent"></div>
+                    <h3 id="home-greeting" class="text-2xl serif-font italic font-semibold text-cozy-700 leading-tight">
+                        Good morning, Kyle.
+                    </h3>
+                    <p id="home-reflection-prompt" class="text-xs text-cozy-700/60 font-light mt-1.5 italic">
+                        "What is one beautiful thing you want to accomplish today?"
+                    </p>
+                </div>
+                
+                <!-- 🎯 CENTRALIZED 2X2 BALANCED GRID DASHBOARD -->
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    
+                    <!-- Journal Card -->
+                    <button onclick="navigate('JOURNAL')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
+                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">📝</span>
+                        <div class="space-y-1">
+                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Journal</span>
+                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Deep focus & speech write</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Task Card -->
+                    <button onclick="navigate('TASK')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
+                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">📋</span>
+                        <div class="space-y-1">
+                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Tasks</span>
+                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Dynamic categorized list</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Blip Card -->
+                    <button onclick="navigate('BLIP')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
+                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">⚡</span>
+                        <div class="space-y-1">
+                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Blip</span>
+                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Micro speed-thought log</span>
+                        </div>
+                    </button>
+                    
+                    <!-- Daily AAR Card (Centered primary entry) -->
+                    <button onclick="navigate('AAR')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3 border-cozy-500/20 bg-cozy-500/[0.02]">
+                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">👥</span>
+                        <div class="space-y-1">
+                            <span class="block text-xs font-bold text-cozy-500 uppercase tracking-widest">Daily AAR</span>
+                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">After Action Review & Coach</span>
+                        </div>
+                    </button>
+                    
+                </div>
+                
+                <!-- 🎇 CENTRAL VIBE CHECK CALL-TO-ACTION -->
+                <div class="pt-4 border-t border-cozy-500/10 flex flex-col space-y-4">
+                    
+                    <!-- End of Day Vibe Check Banner -->
+                    <button onclick="navigate('REVIEW')" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-xs rounded-2xl transition-all shadow-md active:scale-95 text-center uppercase tracking-[0.25em]">
+                        ✨ Compile EOD Vibe Check Review
+                    </button>
+                    
+                    <div class="flex space-x-2 w-full">
+                        <button onclick="navigate('TASK_LIST')" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-cozy-700/60 hover:text-cozy-500 transition-colors text-center">
+                            Open Checklist
+                        </button>
+                        <button onclick="navigate('CATEGORY_EXPLORER')" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-cozy-700/60 hover:text-cozy-500 transition-colors text-center">
+                            History Activity
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📝 2. JOURNAL VIEW -->
+            <div id="view-journal" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Deep Focus Journal</h3>
+                    <span id="journal-clock" class="text-xs text-cozy-700/50 font-light">Time</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="relative">
+                        <textarea id="journal-input" placeholder="Start typing your deep reflection here... or click the microphone to speak!" class="w-full h-64 p-6 rounded-2xl form-input text-sm leading-relaxed resize-none shadow-sm"></textarea>
+                        
+                        <!-- Audio Equalizer / Status (Hidden by default) -->
+                        <div id="voice-status-container" class="hidden absolute top-4 right-4 bg-white/90 border border-cozy-500/20 rounded-xl px-4 py-2 flex items-center space-x-3 backdrop-blur-md shadow-md">
+                            <span class="w-2 h-2 rounded-full bg-cozy-500 animate-pulse"></span>
+                            <div class="voice-wave">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3 w-full">
+                        <!-- Microphone Capture Button -->
+                        <button id="btn-journal-mic" class="p-4 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-2xl transition-all shadow-sm relative" title="Toggle Voice Dictation">
+                            <span class="text-xl">🎙️</span>
+                        </button>
+                        
+                        <!-- Save Button -->
+                        <button id="btn-journal-save" class="flex-1 py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md active:scale-95">
+                            Save Journal Entry
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🚀 3. TASK VIEW -->
+            <div id="view-task" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Log Today's Tasks</h3>
+                    <span class="text-xs text-cozy-700/50 font-light">Set goals & select categories</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- Task Text Field -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Task Action Name</label>
+                        <input id="task-input" type="text" placeholder="e.g. Complete financial audit, Fix header layout..." class="w-full p-4 rounded-xl form-input text-sm">
+                    </div>
+                    
+                    <!-- Due Date & Time (Optional) -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Due Date & Time (Optional)</label>
+                        <input id="task-due-input" type="datetime-local" class="w-full p-4 rounded-xl form-input text-sm text-cozy-700 bg-white">
+                    </div>
+                    
+                    <!-- Category Select Buttons -->
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Select Category</label>
+                        <div id="task-categories-container" class="flex flex-wrap gap-2">
+                            <!-- Populated dynamically: Work, Personal, Ideas -->
+                        </div>
+                    </div>
+                    
+                    <button id="btn-task-save" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md active:scale-95 mt-4">
+                        Add Task Action
+                    </button>
+                </div>
+            </div>
+
+            <!-- ⚡ 4. BLIP VIEW -->
+            <div id="view-blip" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Speed Blip Capture</h3>
+                    <span class="text-xs text-cozy-700/50 font-light">Fast micro-logs. Press enter to save.</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <input id="blip-input" type="text" placeholder="Got a quick thought? Drop it here instantly..." class="w-full p-5 rounded-2xl form-input text-sm shadow-sm">
+                    
+                    <button id="btn-blip-save" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md active:scale-95">
+                        Capture Thought
+                    </button>
+                </div>
+            </div>
+
+            <!-- 👥 5. AAR VIEW -->
+            <div id="view-aar" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Daily After Action Review (AAR)</h3>
+                    <span class="text-xs text-cozy-700/50 font-light">Track team progress & wins</span>
+                </div>
+                
+                <div class="flex flex-col space-y-6 w-full">
+                    <!-- Top Form: Log Entry Form -->
+                    <div class="space-y-4 bg-white p-6 rounded-3xl border border-cozy-500/10 shadow-sm">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-cozy-700 mb-2">New AAR Log</h4>
+                        
+                        <!-- Went Right -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest">1. What went right today?</label>
+                            <textarea id="aar-right-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Win or success of the day..."></textarea>
+                        </div>
+                        
+                        <!-- Went Wrong -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-[#E07A5F] uppercase tracking-widest">2. What went wrong today?</label>
+                            <textarea id="aar-wrong-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Obstacle or point of friction..."></textarea>
+                        </div>
+                        
+                        <!-- Next Steps -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">3. What should we do differently next time?</label>
+                            <textarea id="aar-next-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Agile adjustments or corrective steps..."></textarea>
+                        </div>
+                        
+                        <button id="btn-aar-save" class="w-full py-3.5 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 mt-2">
+                            Log Entry & Ask Coach
+                        </button>
+                    </div>
+                    
+                    <!-- Bottom Card: AI Coach Tip Card -->
+                    <div class="bg-white border border-cozy-500/15 rounded-3xl p-6 relative overflow-hidden shadow-sm">
+                        <div class="absolute right-0 top-0 w-24 h-24 bg-cozy-500/5 rounded-full blur-2xl"></div>
+                        
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-cozy-500 flex items-center">
+                                <span class="mr-1.5">🤖</span> AI Agile Coach
+                            </h4>
+                            
+                            <!-- Coach response area -->
+                            <p id="aar-coach-response" class="text-xs text-cozy-700/80 leading-relaxed font-light italic">
+                                Log your Daily AAR above, and your AI agile productivity coach will instantly analyze your logs to generate a highly specific tip under 50 words!
+                            </p>
+                        </div>
+                        
+                        <!-- Thinking loading animation (hidden by default) -->
+                        <div id="aar-coach-spinner" class="hidden flex items-center space-x-2 pt-4">
+                            <div class="custom-spinner"></div>
+                            <span class="text-xs text-cozy-700/60 italic">Coach is analyzing patterns...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📊 6. VIBE CHECK REVIEW -->
+            <div id="view-review" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">EOD Review & Vibe Check</h3>
+                    <button id="btn-run-vibecheck" class="text-xs font-semibold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-4 py-1.5 rounded-full">
+                        Run New Vibe Check
+                    </button>
+                </div>
+                
+                <div id="vibe-dashboard-container" class="space-y-6">
+                    <!-- Dynamic Vibe Check card (populated via JS) -->
+                    <div class="bg-white border border-cozy-500/10 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                        <span class="text-4xl block">🔍</span>
+                        <p class="text-cozy-700/60 text-sm font-light leading-relaxed">Click "Run New Vibe Check" above to compile all your tasks, blips, and journal reflections into an emotional intelligence and productivity summary!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 📋 7. TASK LIST VIEW -->
+            <div id="view-task-list" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Task Action Items</h3>
+                    <div class="flex items-center space-x-3">
+                        <!-- Hide Completed Toggle -->
+                        <label class="flex items-center space-x-1.5 cursor-pointer bg-cozy-100 hover:bg-cozy-100/80 px-3 py-1 rounded-full select-none text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest border border-cozy-500/10 transition-all">
+                            <input type="checkbox" id="chk-hide-completed" class="w-3.5 h-3.5 rounded border-cozy-500/25 text-cozy-500 focus:ring-cozy-500 cursor-pointer bg-white">
+                            <span>Hide Completed</span>
+                        </label>
+                        <span id="task-completed-badge" class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest bg-cozy-500/10 border border-cozy-500/20 px-3 py-1 rounded-full">Completed: 0/0</span>
+                    </div>
+                </div>
+                
+                <!-- Category Tabs -->
+                <div id="task-list-tabs" class="flex space-x-1.5 border-b border-cozy-500/5 pb-2">
+                    <button onclick="filterTasksTab('ALL')" id="tab-task-all" class="px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all">All</button>
+                    <!-- Populated dynamically via JS categories -->
+                </div>
+                
+                <!-- Scrollable Checklist container -->
+                <div id="task-checklist-scroll" class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- 📁 8. HISTORY & CATEGORY EXPLORER VIEW -->
+            <div id="view-category-explorer" class="page-view w-full max-w-xl mx-auto space-y-6">
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
+                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">History Activity</h3>
+                    
+                    <div class="flex items-center space-x-2">
+                        <!-- Search Box -->
+                        <input id="history-search-input" type="text" placeholder="Search entries..." class="p-2 w-36 rounded-lg form-input text-xs shadow-sm">
+                        
+                        <!-- Export to Sheets Button -->
+                        <button id="btn-export-sheets" class="text-xs font-semibold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-3 py-1.5 rounded-full" title="Save Backup">
+                            Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- History Feed Filter tabs -->
+                <div class="flex space-x-1.5 border-b border-cozy-500/5 pb-2">
+                    <button onclick="filterHistoryTab('JOURNAL')" id="tab-history-journal" class="px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white">Journals</button>
+                    <button onclick="filterHistoryTab('BLIP')" id="tab-history-blip" class="px-4 py-2 text-xs font-semibold rounded-lg text-cozy-700/60 hover:text-cozy-500">Blips</button>
+                    <button onclick="filterHistoryTab('AAR')" id="tab-history-aar" class="px-4 py-2 text-xs font-semibold rounded-lg text-cozy-700/60 hover:text-cozy-500">AAR Logs</button>
+                </div>
+                
+                <!-- Scrollable activity feed -->
+                <div id="history-feed-container" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ================= FOOTER SYNCHRONIZATION BAR ================= -->
+        <footer class="w-full py-4 border-t border-cozy-500/10 mt-6 flex flex-col items-center space-y-3 z-30">
+            <button id="btn-sync-dashboard" class="flex flex-col items-center space-y-1 bg-white hover:bg-cozy-100 border border-cozy-500/10 py-3 px-6 rounded-2xl w-full transition-all shadow-sm">
+                <div class="flex items-center space-x-2 text-[10px] font-semibold text-cozy-700/60 uppercase tracking-widest">
+                    <span id="footer-sync-light" class="w-2 h-2 rounded-full bg-cozy-500 animate-pulse"></span>
+                    <span id="footer-sync-status">Vault Status: Offline Mode</span>
+                </div>
+                <span id="footer-sync-time" class="text-[8px] text-cozy-700/50 uppercase tracking-widest font-semibold">Create entries to save database</span>
+            </button>
+        </footer>
+        
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= MODALS & DIALOG CARDS =============== -->
+    <!-- ======================================================= -->
+
+    <!-- 1. SETTINGS CONFIGURATION MODAL -->
+    <div id="modal-settings" class="hidden fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white border border-cozy-500/20 w-full max-w-md rounded-[2rem] p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-cozy-700">
+            
+            <div class="flex justify-between items-center pb-2 border-b border-cozy-500/10">
+                <h3 class="text-xl serif-font italic text-cozy-700 font-medium">Settings & Keys</h3>
+                <button onclick="toggleModal('modal-settings', false)" class="p-1.5 text-cozy-700/50 hover:text-cozy-500 transition-colors text-lg">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- User tag config -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Author Username</label>
+                    <input id="settings-user-input" type="text" class="w-full p-3 rounded-xl form-input text-xs" placeholder="e.g. Kyle, John...">
+                </div>
+                
+                <!-- Google Gemini API Key -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Google Gemini API Key</label>
+                    <div class="relative">
+                        <input id="settings-gemini-input" type="password" class="w-full p-3 pr-10 rounded-xl form-input text-xs" placeholder="Enter Gemini AI Studio key...">
+                        <button onclick="toggleInputMask('settings-gemini-input')" class="absolute inset-y-0 right-3 flex items-center text-cozy-700/50 hover:text-cozy-500 text-xs">👁️</button>
+                    </div>
+                </div>
+                
+                <!-- Supabase Project URL -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Supabase Database URL (Optional)</label>
+                    <input id="settings-supa-url" type="text" class="w-full p-3 rounded-xl form-input text-xs" placeholder="e.g. https://your-proj.supabase.co">
+                </div>
+                
+                <!-- Supabase Anon Key -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Supabase Anon Key (Optional)</label>
+                    <div class="relative">
+                        <input id="settings-supa-key" type="password" class="w-full p-3 pr-10 rounded-xl form-input text-xs" placeholder="Enter Supabase Client API Key...">
+                        <button onclick="toggleInputMask('settings-supa-key')" class="absolute inset-y-0 right-3 flex items-center text-cozy-700/50 hover:text-cozy-500 text-xs">👁️</button>
+                    </div>
+                </div>
+                
+                <p class="text-[9px] text-cozy-700/50 leading-normal italic">All keys are saved locally on your own computer inside localStorage. They are never sent to any third-party servers.</p>
+            </div>
+            
+            <button id="btn-settings-save" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md">
+                Save Application Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. INFO & SETUP GUIDE MODAL -->
+    <div id="modal-info" class="hidden fixed inset-0 z-[110] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white border border-cozy-500/20 w-full max-w-md rounded-[2rem] p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh] text-cozy-700">
+            
+            <div class="flex justify-between items-center pb-2 border-b border-cozy-500/10">
+                <h3 class="text-xl serif-font italic text-cozy-700 font-medium">Guide & Setup</h3>
+                <button onclick="toggleModal('modal-info', false)" class="p-1.5 text-cozy-700/50 hover:text-cozy-500 transition-colors text-lg">&times;</button>
+            </div>
+            
+            <div class="space-y-6 text-xs text-cozy-700/80 leading-relaxed font-light">
+                <section class="space-y-2">
+                    <h4 class="font-bold text-cozy-700 uppercase tracking-widest text-[10px]">📁 Where is my data?</h4>
+                    <div class="bg-cozy-50 p-4 rounded-xl space-y-2 border border-cozy-500/10">
+                        <p><strong>Local Storage:</strong> Stored immediately in your browser cache for lightning-fast, offline access.</p>
+                        <p><strong>Supabase Cloud:</strong> If configured in Settings, data is synced in real-time to a secure PostgreSQL database.</p>
+                    </div>
+                </section>
+                
+                <section class="space-y-2">
+                    <h4 class="font-bold text-cozy-700 uppercase tracking-widest text-[10px]">🎙️ Native Voice Dictation</h4>
+                    <p>Click the 🎙️ button on the Journal page to dictate in real-time. This leverages high-accuracy browser engines that translate speech locally at absolute speeds with zero lag.</p>
+                </section>
+                
+                <section class="space-y-2">
+                    <h4 class="font-bold text-cozy-700 uppercase tracking-widest text-[10px]">📱 Install as a Mobile App</h4>
+                    <p>Open this page on your smartphone. In **Safari (iOS)**, tap Share ➔ **"Add to Home Screen"**. In **Chrome (Android)**, tap the three dots ➔ **"Install App"**. This gives you a full-screen, native-feeling mobile app with zero browser bars!</p>
+                </section>
+            </div>
+            
+            <button onclick="toggleModal('modal-info', false)" class="w-full py-3.5 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95">
+                Got it, let's flow!
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. SYNC & VAULT STATUS DASHBOARD MODAL -->
+    <div id="modal-sync" class="hidden fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white border border-cozy-500/20 w-full max-w-sm rounded-[2rem] p-8 space-y-6 shadow-2xl text-cozy-700">
+            
+            <div class="flex justify-between items-center pb-2 border-b border-cozy-500/10">
+                <h3 class="text-xl serif-font italic text-cozy-700 font-medium">Vault Sync Dashboard</h3>
+                <button onclick="toggleModal('modal-sync', false)" class="p-1.5 text-cozy-700/50 hover:text-cozy-500 transition-colors">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Supabase Cloud Connection Status Card -->
+                <div class="bg-cozy-50 border border-cozy-500/10 rounded-xl p-4 space-y-2">
+                    <span class="text-[9px] font-bold text-cozy-700/60 uppercase tracking-widest">Supabase Integration</span>
+                    <p id="sync-supa-status-text" class="text-xs text-cozy-700/80 font-light">Cloud connection: Configured & Ready</p>
+                </div>
+                
+                <!-- Table Row Count Summary Card -->
+                <div class="bg-cozy-50 border border-cozy-500/10 rounded-xl p-4 space-y-3">
+                    <span class="text-[9px] font-bold text-cozy-700/60 uppercase tracking-widest">Local Cache Capacity</span>
+                    <div class="grid grid-cols-2 gap-2 text-[10px] font-semibold text-cozy-700">
+                        <div class="p-2 bg-white rounded border border-cozy-500/10">Journals: <span id="sync-count-journal">0</span></div>
+                        <div class="p-2 bg-white rounded border border-cozy-500/10">Tasks: <span id="sync-count-task">0</span></div>
+                        <div class="p-2 bg-white rounded border border-cozy-500/10">Blips: <span id="sync-count-blip">0</span></div>
+                        <div class="p-2 bg-white rounded border border-cozy-500/10">AAR Logs: <span id="sync-count-aar">0</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="toggleModal('modal-sync', false)" class="w-full py-4 bg-cozy-100 hover:bg-cozy-200 text-cozy-700 font-semibold text-sm rounded-2xl transition-all shadow-md">
+                Close Sync Monitor
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP SCRIPT ================= -->
+    <script type="module" src="app.js?v=1.3"></script>
+    
+</body>
+</html>

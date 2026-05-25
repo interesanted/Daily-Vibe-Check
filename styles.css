@@ -1,0 +1,178 @@
+/* Premium Warm Linen & Sand Design System */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+:root {
+    color-scheme: only light;
+    --bg-primary: #FAF7F2; /* Cozy Cream Linen */
+    --bg-secondary: #F3EBE1; /* Soft Warm Oatmeal */
+    --card-bg: #FFFFFF; /* Pure White Notebook Sheet */
+    --border-color: rgba(217, 122, 95, 0.12); /* Soft Terracotta Line */
+    --text-primary: #1D1412; /* Premium Ultra-Deep Cocoa (darkened for crisp legibility) */
+    --text-secondary: #5C4E4A; /* Premium Deep Muted Cocoa (darkened for contrast) */
+    --accent-terracotta: #D97A5F; /* Warm Terracotta */
+    --accent-blue: #5C8CA6; /* Slate Blue */
+    --accent-green: #6C9372; /* Cozy Sage Green */
+    --accent-orange: #E2995D; /* Cozy Amber */
+    --glow-color: rgba(217, 122, 95, 0.08);
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    background-image: radial-gradient(var(--border-color) 0.8px, transparent 0.8px);
+    background-size: 24px 24px; /* Warm dotted paper aesthetic */
+}
+
+.serif-font {
+    font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Cozy Floating Cards with Soft Elevations */
+.glass-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(58, 46, 43, 0.04), 0 1px 3px rgba(58, 46, 43, 0.02);
+    border-radius: 24px;
+}
+
+.glass-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    border-color: var(--accent-terracotta);
+    box-shadow: 0 12px 24px rgba(217, 122, 95, 0.06), 0 2px 4px rgba(217, 122, 95, 0.02);
+    transform: translateY(-2px);
+}
+
+/* Page Transition Effects & Robust Top-Alignment fixes */
+.page-view {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.page-view:not(.active) {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    pointer-events: none !important;
+}
+
+.page-view.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Beautiful custom warm scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(243, 235, 225, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(217, 122, 95, 0.2);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(217, 122, 95, 0.4);
+}
+
+/* Voice Equalizer Recording Wave */
+.voice-wave {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 30px;
+}
+
+.wave-bar {
+    width: 3px;
+    height: 6px;
+    background-color: var(--accent-terracotta);
+    border-radius: 9999px;
+    animation: bounce 1.2s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(2) { animation-delay: 0.1s; height: 12px; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; height: 24px; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; height: 18px; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; height: 8px; }
+.wave-bar:nth-child(6) { animation-delay: 0.5s; height: 22px; }
+.wave-bar:nth-child(7) { animation-delay: 0.6s; height: 14px; }
+.wave-bar:nth-child(8) { animation-delay: 0.7s; height: 5px; }
+
+@keyframes bounce {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+    50% {
+        transform: scaleY(2.2);
+    }
+}
+
+/* Spinner */
+.custom-spinner {
+    border: 3px solid rgba(217, 122, 95, 0.05);
+    border-top: 3px solid var(--accent-terracotta);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Custom switch / inputs */
+.form-input {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.25s ease;
+}
+
+.form-input:focus {
+    border-color: var(--accent-terracotta);
+    box-shadow: 0 0 10px rgba(217, 122, 95, 0.08);
+    outline: none;
+}
+
+.form-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* Cozy selection styling */
+::selection {
+    background: rgba(217, 122, 95, 0.15);
+    color: var(--accent-terracotta);
+}
+
+/* Explicit Top-Alignment & Compact Viewport fixes */
+main {
+    display: block !important; /* Force block layout instead of flex to prevent any vertical-centering quirks */
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding-top: 0.5rem !important;
+}
+
+.page-view {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
