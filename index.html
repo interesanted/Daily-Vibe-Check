@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=1.7">
+    <link rel="stylesheet" href="styles.css?v=1.8">
     
     <!-- Supabase JS Client & Google GenAI SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -280,7 +280,10 @@
                     <!-- Task Text Field -->
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Task Action Name</label>
-                        <input id="task-input" type="text" placeholder="e.g. Complete financial audit, Fix header layout..." class="w-full p-4 rounded-xl form-input text-sm">
+                        <div class="flex items-center space-x-2">
+                            <input id="task-input" type="text" placeholder="e.g. Complete financial audit, Fix header layout..." class="flex-1 p-4 rounded-xl form-input text-sm">
+                            <button id="btn-task-mic" class="p-4 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-xl transition-all shadow-sm select-none" title="Dictate Task">🎙️</button>
+                        </div>
                     </div>
                     
                     <!-- Due Date & Time (Optional) -->
@@ -311,7 +314,10 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <input id="blip-input" type="text" placeholder="Got a quick thought? Drop it here instantly..." class="w-full p-5 rounded-2xl form-input text-sm shadow-sm">
+                    <div class="flex items-center space-x-2">
+                        <input id="blip-input" type="text" placeholder="Got a quick thought? Drop it here instantly..." class="flex-1 p-5 rounded-2xl form-input text-sm shadow-sm">
+                        <button id="btn-blip-mic" class="p-5 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-2xl transition-all shadow-sm select-none" title="Dictate Blip">🎙️</button>
+                    </div>
                     
                     <button id="btn-blip-save" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md active:scale-95">
                         Capture Thought
@@ -334,19 +340,28 @@
                         <!-- Went Right -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest">1. What went right today?</label>
-                            <textarea id="aar-right-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Win or success of the day..."></textarea>
+                            <div class="flex items-start space-x-2">
+                                <textarea id="aar-right-input" class="flex-1 h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Win or success of the day..."></textarea>
+                                <button id="btn-aar-right-mic" class="p-2.5 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-lg transition-all shadow-sm select-none" title="Dictate Went Right">🎙️</button>
+                            </div>
                         </div>
                         
                         <!-- Went Wrong -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-[#E07A5F] uppercase tracking-widest">2. What went wrong today?</label>
-                            <textarea id="aar-wrong-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Obstacle or point of friction..."></textarea>
+                            <div class="flex items-start space-x-2">
+                                <textarea id="aar-wrong-input" class="flex-1 h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Obstacle or point of friction..."></textarea>
+                                <button id="btn-aar-wrong-mic" class="p-2.5 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-lg transition-all shadow-sm select-none" title="Dictate Went Wrong">🎙️</button>
+                            </div>
                         </div>
                         
                         <!-- Next Steps -->
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">3. What should we do differently next time?</label>
-                            <textarea id="aar-next-input" class="w-full h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Agile adjustments or corrective steps..."></textarea>
+                            <div class="flex items-start space-x-2">
+                                <textarea id="aar-next-input" class="flex-1 h-20 p-3 rounded-lg form-input text-xs resize-none" placeholder="Agile adjustments or corrective steps..."></textarea>
+                                <button id="btn-aar-next-mic" class="p-2.5 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-lg transition-all shadow-sm select-none" title="Dictate Next Steps">🎙️</button>
+                            </div>
                         </div>
                         
                         <button id="btn-aar-save" class="w-full py-3.5 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 mt-2">
@@ -463,6 +478,39 @@
                     <div id="task-coach-spinner" class="hidden flex items-center space-x-2 pt-2.5">
                         <div class="custom-spinner !w-5 !h-5 !border-[2px] !border-t-amber-500 !border-amber-500/10"></div>
                         <span class="text-[9px] text-cozy-700/50 italic font-semibold uppercase tracking-wider">AI Coach is prioritizing energy flows...</span>
+                    </div>
+                </div>
+                
+                <!-- Quick Add Task Bar -->
+                <div class="bg-white border border-cozy-500/10 p-4 rounded-3xl shadow-sm space-y-3 select-none">
+                    <div class="flex items-center space-x-2">
+                        <input id="quick-add-task-input" type="text" placeholder="Add new task instantly..." class="flex-1 p-3 rounded-xl form-input text-xs">
+                        <!-- Microphone button for quick dictating task -->
+                        <button id="btn-quick-add-task-mic" class="p-3 bg-cozy-50 hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-xl transition-all select-none text-xs" title="Dictate Task">🎙️</button>
+                        
+                        <!-- Add Button -->
+                        <button onclick="window.handleQuickAddTask()" class="px-4 py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95">
+                            + Add
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Category Select -->
+                    <div class="flex items-center justify-between text-[10px] text-cozy-700/70 font-semibold px-1">
+                        <span>Select Category:</span>
+                        <div class="flex items-center space-x-3">
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Work" checked class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Work</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Personal" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Personal</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Ideas" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Ideas</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 
@@ -673,7 +721,7 @@
     </div>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=1.7"></script>
+    <script type="module" src="app.js?v=1.8"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->

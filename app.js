@@ -772,6 +772,87 @@ function toggleVoiceRecording() {
     }
 }
 
+window.bindVoiceDictation = function(inputId, buttonId) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const btn = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    
+    if (!SpeechRecognition || !btn || !input) return;
+    
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+    
+    let isRecActive = false;
+    let baseText = "";
+    
+    rec.onstart = () => {
+        isRecActive = true;
+        baseText = input.value.trim();
+        if (baseText) baseText += " ";
+        btn.classList.add("border-red-500", "bg-red-950/20");
+        btn.innerHTML = "🛑";
+        window.showToast("Listening... Speak naturally.");
+    };
+    
+    rec.onend = () => {
+        isRecActive = false;
+        baseText = input.value.trim();
+        btn.classList.remove("border-red-500", "bg-red-950/20");
+        btn.innerHTML = "🎙️";
+    };
+    
+    rec.onerror = (e) => {
+        console.error(`Dictation error on ${inputId}:`, e.error);
+        rec.stop();
+    };
+    
+    rec.onresult = (event) => {
+        let finalConcat = '';
+        let interimConcat = '';
+        let lastSegment = '';
+        
+        for (let i = 0; i < event.results.length; ++i) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                let currentSegment = result[0].transcript.trim();
+                // Deduplicate Android cumulative speech segments
+                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
+                    finalConcat = currentSegment + " ";
+                } else {
+                    finalConcat += currentSegment + " ";
+                }
+                lastSegment = currentSegment;
+            } else {
+                interimConcat += result[0].transcript;
+            }
+        }
+        
+        input.value = baseText + finalConcat + interimConcat;
+        
+        if (inputId === "journal-input" && window.updateJournalMetrics) {
+            window.updateJournalMetrics();
+        }
+    };
+    
+    btn.onclick = (e) => {
+        e.preventDefault();
+        if (isRecActive) {
+            rec.stop();
+        } else {
+            // Stop any other active speech sessions in the app
+            if (window.activeSpeechSession) {
+                try {
+                    window.activeSpeechSession.stop();
+                } catch (err) {}
+            }
+            window.activeSpeechSession = rec;
+            rec.start();
+        }
+    };
+};
+
 // ==========================================
 // ========== 6. JOURNAL CORE LAYER =========
 // ==========================================
@@ -1211,6 +1292,41 @@ window.runTaskCoach = async function() {
     } finally {
         spinner.classList.add("hidden");
     }
+};
+
+window.handleQuickAddTask = function() {
+    const input = document.getElementById("quick-add-task-input");
+    if (!input) return;
+    
+    const taskName = input.value.trim();
+    if (!taskName) {
+        window.showToast("Please type a task description first.");
+        return;
+    }
+    
+    const checkedRadio = document.querySelector('input[name="quick-add-cat"]:checked');
+    const category = checkedRadio ? checkedRadio.value : "Work";
+    
+    const newTask = {
+        id: "t-" + Date.now(),
+        name: taskName,
+        category: category,
+        completed: false,
+        due_date: null,
+        timestamp: new Date().toISOString()
+    };
+    
+    state.tasks.unshift(newTask);
+    saveLocalCache("tasks");
+    localStorage.removeItem("vibe_task_coach_tip"); // Clear AI Coach cache for fresh advice!
+    
+    input.value = "";
+    window.showToast("Task added instantly!");
+    
+    pushToCloud("tasks", newTask);
+    
+    // Refresh task checklist in place
+    renderTaskChecklist();
 };
 
 // ==========================================
@@ -1966,6 +2082,24 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Bind search keypress in explorer
     document.getElementById("history-search-input").addEventListener("input", renderHistoryFeed);
+    
+    // Bind new Universal Voice Dictation fields
+    window.bindVoiceDictation("task-input", "btn-task-mic");
+    window.bindVoiceDictation("blip-input", "btn-blip-mic");
+    window.bindVoiceDictation("aar-right-input", "btn-aar-right-mic");
+    window.bindVoiceDictation("aar-wrong-input", "btn-aar-wrong-mic");
+    window.bindVoiceDictation("aar-next-input", "btn-aar-next-mic");
+    window.bindVoiceDictation("quick-add-task-input", "btn-quick-add-task-mic");
+    
+    // Bind Enter key on Quick Add Task Input
+    const quickAddInput = document.getElementById("quick-add-task-input");
+    if (quickAddInput) {
+        quickAddInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                window.handleQuickAddTask();
+            }
+        });
+    }
     
     // Settings Save Click
     document.getElementById("btn-settings-save").onclick = () => {
