@@ -91,6 +91,24 @@
                     </p>
                 </div>
                 
+                <!-- 🔥 HABIT FLOW STREAK & MINI-TIMELINE -->
+                <div id="home-streak-card" class="w-full streak-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex items-center space-x-3.5">
+                        <span class="text-3xl">🔥</span>
+                        <div class="space-y-0.5">
+                            <span id="home-streak-count" class="block text-sm font-extrabold text-cozy-700 serif-font italic">0-Day Vibe Streak</span>
+                            <span id="home-streak-message" class="block text-[10px] text-cozy-700/60 font-light italic leading-none">Begin your reflection flow today!</span>
+                        </div>
+                    </div>
+                    <!-- 7-Day Dot Timeline -->
+                    <div class="flex items-center space-x-2 bg-cozy-50/50 p-2.5 rounded-xl border border-cozy-500/5 self-start sm:self-auto">
+                        <span class="text-[8px] font-bold uppercase tracking-widest text-cozy-700/50 mr-1 select-none">Last 7 Days:</span>
+                        <div id="home-timeline-dots" class="flex items-center space-x-1.5">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- 🎯 CENTRALIZED 2X2 BALANCED GRID DASHBOARD -->
                 <div class="grid grid-cols-2 gap-4 w-full">
                     
@@ -358,6 +376,34 @@
                         <button id="btn-export-sheets" class="text-xs font-semibold text-cozy-500 hover:text-white hover:bg-cozy-500 transition-colors bg-cozy-500/10 border border-cozy-500/20 px-3 py-1.5 rounded-full" title="Save Backup">
                             Export
                         </button>
+                    </div>
+                </div>
+                
+                <!-- 📅 INTERACTIVE HABIT CALENDAR MONTH BOARD -->
+                <div class="w-full calendar-container">
+                    <div class="calendar-header">
+                        <button id="btn-cal-prev" class="text-xs font-bold text-cozy-700/60 hover:text-cozy-500 transition-colors bg-cozy-50 px-3 py-1.5 rounded-lg border border-cozy-500/10 select-none">← Prev</button>
+                        <h4 id="calendar-month-year" class="text-sm font-extrabold text-cozy-700 serif-font italic tracking-wider">Month Year</h4>
+                        <button id="btn-cal-next" class="text-xs font-bold text-cozy-700/60 hover:text-cozy-500 transition-colors bg-cozy-50 px-3 py-1.5 rounded-lg border border-cozy-500/10 select-none">Next →</button>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">S</div>
+                        <div class="calendar-day-header">M</div>
+                        <div class="calendar-day-header">T</div>
+                        <div class="calendar-day-header">W</div>
+                        <div class="calendar-day-header">T</div>
+                        <div class="calendar-day-header">F</div>
+                        <div class="calendar-day-header">S</div>
+                    </div>
+                    <div id="calendar-days-scroll" class="calendar-grid mt-1.5">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                    
+                    <!-- Dynamic Date Filter Status -->
+                    <div id="calendar-filter-status" class="hidden flex items-center justify-between bg-cozy-500/5 border border-cozy-500/20 rounded-xl px-4 py-2 mt-3.5">
+                        <span class="text-[10px] font-semibold text-cozy-700/80">Active Filter: <span id="calendar-filter-date" class="font-extrabold text-cozy-500">None</span></span>
+                        <button id="btn-clear-cal-filter" class="text-[9px] font-extrabold uppercase tracking-widest text-[#E07A5F] hover:text-red-500 transition-colors select-none">Clear Date Filter</button>
                     </div>
                 </div>
                 

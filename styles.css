@@ -176,3 +176,126 @@ main {
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
+
+/* ========================================== */
+/* ========== HABIT CALENDAR & STREAK ======= */
+/* ========================================== */
+
+.streak-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(58, 46, 43, 0.02), 0 1px 2px rgba(58, 46, 43, 0.01);
+    border-radius: 20px;
+}
+
+.timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.timeline-dot.active {
+    background-color: var(--accent-terracotta);
+    box-shadow: 0 0 8px rgba(217, 122, 95, 0.4);
+}
+
+.timeline-dot.inactive {
+    border: 1px dashed rgba(217, 122, 95, 0.25);
+    background-color: transparent;
+}
+
+/* Calendar Layout Grid */
+.calendar-container {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(58, 46, 43, 0.02), 0 1px 2px rgba(58, 46, 43, 0.01);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    text-align: center;
+}
+
+.calendar-day-header {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(217, 122, 95, 0.06);
+}
+
+.calendar-day {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-primary);
+    border-radius: 10px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.calendar-day:hover {
+    background-color: rgba(217, 122, 95, 0.05);
+    border-color: rgba(217, 122, 95, 0.15);
+}
+
+.calendar-day.today {
+    background-color: rgba(217, 122, 95, 0.03);
+    border-color: rgba(217, 122, 95, 0.25);
+    font-weight: 700;
+}
+
+.calendar-day.selected {
+    background-color: var(--accent-terracotta) !important;
+    color: #FFFFFF !important;
+    border-color: var(--accent-terracotta) !important;
+    box-shadow: 0 4px 10px rgba(217, 122, 95, 0.25);
+}
+
+.calendar-day.selected .calendar-dot {
+    background-color: #FFFFFF !important;
+}
+
+.calendar-day.empty {
+    cursor: default;
+    opacity: 0.15;
+}
+
+.calendar-day.empty:hover {
+    background: transparent;
+    border-color: transparent;
+}
+
+/* Glowing Terracotta Habit Dot */
+.calendar-dot {
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--accent-terracotta);
+    box-shadow: 0 0 4px var(--accent-terracotta);
+    transition: all 0.2s ease;
+}

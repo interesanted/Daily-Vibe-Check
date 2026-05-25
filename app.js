@@ -21,7 +21,10 @@ let state = {
     selectedCategory: "Work",
     historyTab: "JOURNAL",
     taskFilterTab: "ALL",
-    hideCompletedTasks: false
+    hideCompletedTasks: false,
+    calendarYear: new Date().getFullYear(),
+    calendarMonth: new Date().getMonth(),
+    selectedFilterDate: null
 };
 
 let supabaseClient = null;
@@ -96,6 +99,7 @@ function saveLocalCache(type) {
     if (type === "blips") localStorage.setItem("vibe_blips", JSON.stringify(state.blips));
     if (type === "aars") localStorage.setItem("vibe_aars", JSON.stringify(state.aars));
     updateSyncDashboardMetrics();
+    updateFlowStreakPanel(); // Update streak panels dynamically!
 }
 
 // Initialise Supabase Client if configured
@@ -183,6 +187,7 @@ window.navigate = function(viewName) {
         renderTaskChecklist();
     } else if (viewName === "CATEGORY_EXPLORER") {
         targetId = "view-category-explorer";
+        renderInteractiveCalendar(); // Dynamic neomorphic calendar render
         renderHistoryFeed();
     }
     
@@ -237,6 +242,196 @@ window.toggleInputMask = function(inputId) {
         }
     }
 };
+
+// ==========================================
+// ========== 5. FLOW STREAK & CALENDAR CORES 
+// ==========================================
+
+function getLocalDateString(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function getAllActiveDates() {
+    const dates = new Set();
+    const addDate = (isoString) => {
+        if (!isoString) return;
+        try {
+            const dt = new Date(isoString);
+            dates.add(getLocalDateString(dt));
+        } catch (e) {}
+    };
+    
+    state.journals.forEach(j => addDate(j.timestamp));
+    state.tasks.forEach(t => addDate(t.timestamp));
+    state.blips.forEach(b => addDate(b.timestamp));
+    state.aars.forEach(a => addDate(a.timestamp));
+    
+    return dates;
+}
+
+function calculateVibeStreak() {
+    const activeDates = getAllActiveDates();
+    const todayStr = getLocalDateString(new Date());
+    const yesterdayStr = getLocalDateString(new Date(Date.now() - 86400000));
+    
+    // If no logs today and no logs yesterday, streak is 0
+    if (!activeDates.has(todayStr) && !activeDates.has(yesterdayStr)) {
+        return 0;
+    }
+    
+    let streak = 0;
+    let checkDate = activeDates.has(todayStr) ? new Date() : new Date(Date.now() - 86400000);
+    
+    while (true) {
+        const checkStr = getLocalDateString(checkDate);
+        if (activeDates.has(checkStr)) {
+            streak++;
+            // Move back 1 day safely
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    
+    return streak;
+}
+
+function updateFlowStreakPanel() {
+    const streakCount = calculateVibeStreak();
+    const activeDates = getAllActiveDates();
+    
+    const countEl = document.getElementById("home-streak-count");
+    const messageEl = document.getElementById("home-streak-message");
+    
+    if (countEl) {
+        countEl.innerText = `${streakCount}-Day Vibe Streak`;
+    }
+    
+    if (messageEl) {
+        if (streakCount === 0) {
+            messageEl.innerText = "Begin your reflection flow today!";
+        } else if (streakCount < 3) {
+            messageEl.innerText = "A beautiful start. Keep flowing!";
+        } else if (streakCount < 7) {
+            messageEl.innerText = "Building amazing cognitive momentum!";
+        } else {
+            messageEl.innerText = "Absolute mastery of daily flow. Incredible!";
+        }
+    }
+    
+    // Draw timeline dots
+    const timelineContainer = document.getElementById("home-timeline-dots");
+    if (timelineContainer) {
+        timelineContainer.innerHTML = "";
+        
+        for (let i = 6; i >= 0; i--) {
+            const dt = new Date(Date.now() - i * 86400000);
+            const dtStr = getLocalDateString(dt);
+            const isActive = activeDates.has(dtStr);
+            
+            const dot = document.createElement("div");
+            dot.className = `timeline-dot ${isActive ? 'active' : 'inactive'}`;
+            
+            const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekday = dayNames[dt.getDay()];
+            dot.title = `${weekday} (${dt.toLocaleDateString()}) - ${isActive ? 'Logged' : 'No entries'}`;
+            
+            timelineContainer.appendChild(dot);
+        }
+    }
+}
+
+function renderInteractiveCalendar() {
+    const year = state.calendarYear;
+    const month = state.calendarMonth;
+    const activeDates = getAllActiveDates();
+    
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+    
+    const monthYearEl = document.getElementById("calendar-month-year");
+    if (monthYearEl) {
+        monthYearEl.innerText = `${monthNames[month]} ${year}`;
+    }
+    
+    const daysContainer = document.getElementById("calendar-days-scroll");
+    if (!daysContainer) return;
+    daysContainer.innerHTML = "";
+    
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    // 1. Draw empty padding day squares
+    for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement("div");
+        emptyCell.className = "calendar-day empty";
+        daysContainer.appendChild(emptyCell);
+    }
+    
+    // 2. Draw actual days of the month
+    const todayStr = getLocalDateString(new Date());
+    
+    for (let day = 1; day <= totalDays; day++) {
+        const dayCell = document.createElement("div");
+        dayCell.className = "calendar-day";
+        
+        const mmStr = String(month + 1).padStart(2, '0');
+        const ddStr = String(day).padStart(2, '0');
+        const currentDayStr = `${year}-${mmStr}-${ddStr}`;
+        
+        dayCell.innerText = day;
+        
+        if (currentDayStr === todayStr) {
+            dayCell.classList.add("today");
+        }
+        
+        if (state.selectedFilterDate === currentDayStr) {
+            dayCell.classList.add("selected");
+        }
+        
+        if (activeDates.has(currentDayStr)) {
+            const dot = document.createElement("div");
+            dot.className = "calendar-dot";
+            dayCell.appendChild(dot);
+        }
+        
+        dayCell.onclick = () => {
+            if (state.selectedFilterDate === currentDayStr) {
+                clearCalendarFilter();
+            } else {
+                state.selectedFilterDate = currentDayStr;
+                
+                const banner = document.getElementById("calendar-filter-status");
+                const label = document.getElementById("calendar-filter-date");
+                if (banner && label) {
+                    banner.classList.remove("hidden");
+                    const dt = new Date(year, month, day);
+                    label.innerText = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                }
+                
+                renderInteractiveCalendar();
+                renderHistoryFeed();
+            }
+        };
+        
+        daysContainer.appendChild(dayCell);
+    }
+}
+
+function clearCalendarFilter() {
+    state.selectedFilterDate = null;
+    const banner = document.getElementById("calendar-filter-status");
+    if (banner) {
+        banner.classList.add("hidden");
+    }
+    renderInteractiveCalendar();
+    renderHistoryFeed();
+}
 
 function startJournalClock() {
     const clock = document.getElementById("journal-clock");
@@ -879,6 +1074,14 @@ function renderHistoryFeed() {
         feedItems = state.aars.map(a => ({ ...a, type: 'AAR' }));
     }
     
+    // Filter by date if selected in calendar
+    if (state.selectedFilterDate) {
+        feedItems = feedItems.filter(item => {
+            const itemDateStr = getLocalDateString(new Date(item.timestamp));
+            return itemDateStr === state.selectedFilterDate;
+        });
+    }
+    
     // Filter by search query
     if (searchVal) {
         feedItems = feedItems.filter(item => {
@@ -1027,6 +1230,9 @@ function updateUIElements() {
         promptEl.innerText = `"${randomPrompt}"`;
         promptEl.dataset.promptSet = "true"; // Keep it consistent during the active SPA session
     }
+    
+    // Dynamically draw the streak timeline panel on startup
+    updateFlowStreakPanel();
 }
 
 // ==========================================
@@ -1075,6 +1281,27 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-aar-save").onclick = handleSaveAAR;
     document.getElementById("btn-run-vibecheck").onclick = compileVibeCheck;
     document.getElementById("btn-export-sheets").onclick = handleExportSheets;
+    
+    // Calendar Month Navigation Buttons
+    document.getElementById("btn-cal-prev").onclick = () => {
+        state.calendarMonth--;
+        if (state.calendarMonth < 0) {
+            state.calendarMonth = 11;
+            state.calendarYear--;
+        }
+        renderInteractiveCalendar();
+    };
+    
+    document.getElementById("btn-cal-next").onclick = () => {
+        state.calendarMonth++;
+        if (state.calendarMonth > 11) {
+            state.calendarMonth = 0;
+            state.calendarYear++;
+        }
+        renderInteractiveCalendar();
+    };
+    
+    document.getElementById("btn-clear-cal-filter").onclick = clearCalendarFilter;
     
     // Bind search keypress in explorer
     document.getElementById("history-search-input").addEventListener("input", renderHistoryFeed);
