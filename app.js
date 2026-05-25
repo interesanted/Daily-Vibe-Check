@@ -353,11 +353,19 @@ function setupQuickDictation() {
     quickSpeechRecognition.onresult = (event) => {
         let finalConcat = '';
         let interimConcat = '';
+        let lastSegment = '';
         
         for (let i = 0; i < event.results.length; ++i) {
             const result = event.results[i];
             if (result.isFinal) {
-                finalConcat += result[0].transcript.trim() + " ";
+                let currentSegment = result[0].transcript.trim();
+                // Deduplicate Android cumulative speech segments
+                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
+                    finalConcat = currentSegment + " ";
+                } else {
+                    finalConcat += currentSegment + " ";
+                }
+                lastSegment = currentSegment;
             } else {
                 interimConcat += result[0].transcript;
             }
@@ -723,11 +731,19 @@ function setupVoiceDictation() {
     speechRecognition.onresult = (event) => {
         let finalConcat = '';
         let interimConcat = '';
+        let lastSegment = '';
         
         for (let i = 0; i < event.results.length; ++i) {
             const result = event.results[i];
             if (result.isFinal) {
-                finalConcat += result[0].transcript.trim() + " ";
+                let currentSegment = result[0].transcript.trim();
+                // Deduplicate Android cumulative speech segments
+                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
+                    finalConcat = currentSegment + " ";
+                } else {
+                    finalConcat += currentSegment + " ";
+                }
+                lastSegment = currentSegment;
             } else {
                 interimConcat += result[0].transcript;
             }
