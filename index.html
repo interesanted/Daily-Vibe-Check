@@ -32,6 +32,12 @@
     <!-- Custom Style Sheet with Cache Buster -->
     <link rel="stylesheet" href="styles.css?v=1.9">
     
+    <!-- PWA Manifest & Mobile Icons styling -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <!-- Supabase JS Client & Google GenAI SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -719,6 +725,17 @@
             </button>
         </div>
     </div>
+
+    <!-- ================= PWA REGISTRATION ================= -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js?v=1.9')
+                    .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
     <script type="module" src="app.js?v=1.9"></script>
