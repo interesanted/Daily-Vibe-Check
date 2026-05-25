@@ -481,6 +481,7 @@ window.routeQuickDictate = async function(type) {
         };
         state.tasks.unshift(newTask);
         saveLocalCache("tasks");
+        localStorage.removeItem("vibe_task_coach_tip"); // Clear cached execution strategy
         pushToCloud("tasks", newTask);
         window.showToast("Task action item filed successfully!");
         window.toggleQuickDrawer(false);
@@ -937,6 +938,7 @@ function handleSaveTask() {
     // Add to state and save
     state.tasks.unshift(newTask);
     saveLocalCache("tasks");
+    localStorage.removeItem("vibe_task_coach_tip"); // Clear cached execution strategy
     
     // Reset fields
     input.value = "";
@@ -969,6 +971,7 @@ window.toggleTaskComplete = function(taskId) {
     });
     
     saveLocalCache("tasks");
+    localStorage.removeItem("vibe_task_coach_tip"); // Clear cached execution strategy
     
     // Re-draw current list
     renderTaskChecklist();
@@ -1112,6 +1115,7 @@ function handleDeleteTask(taskId) {
     if (confirm("Are you sure you want to delete this action item?")) {
         state.tasks = state.tasks.filter(t => t.id !== taskId);
         saveLocalCache("tasks");
+        localStorage.removeItem("vibe_task_coach_tip"); // Clear cached execution strategy
         
         if (supabaseClient) {
             supabaseClient.from("tasks").delete().eq("id", taskId)
@@ -1123,6 +1127,91 @@ function handleDeleteTask(taskId) {
         renderTaskChecklist();
     }
 }
+
+window.toggleTaskCoachPanel = function(show) {
+    const panel = document.getElementById("task-coach-panel");
+    if (!panel) return;
+    
+    if (show) {
+        panel.classList.remove("hidden");
+        // Try to load cached tip first to feel super premium
+        const cachedTip = localStorage.getItem("vibe_task_coach_tip");
+        const responseEl = document.getElementById("task-coach-response");
+        if (cachedTip && responseEl) {
+            responseEl.innerHTML = cachedTip;
+        } else {
+            // Trigger fresh run
+            window.runTaskCoach();
+        }
+    } else {
+        panel.classList.add("hidden");
+    }
+};
+
+window.runTaskCoach = async function() {
+    const apiKey = state.gemini_api_key;
+    const responseEl = document.getElementById("task-coach-response");
+    const spinner = document.getElementById("task-coach-spinner");
+    
+    if (!responseEl || !spinner) return;
+    
+    if (!apiKey) {
+        responseEl.innerHTML = "⚠️ <strong>Gemini API Key not found.</strong><br>Please click the settings gear (⚙️) in the top-right header to configure your key to enable AI Task Coaching!";
+        return;
+    }
+    
+    // Extract uncompleted tasks
+    const activeTasks = state.tasks.filter(t => !t.completed);
+    
+    if (activeTasks.length === 0) {
+        window.showToast("No active tasks to coach! Add some tasks first.");
+        document.getElementById("task-coach-panel").classList.add("hidden");
+        return;
+    }
+    
+    // Show spinner and reset message
+    spinner.classList.remove("hidden");
+    responseEl.innerText = "Coaching your action priority list...";
+    
+    let prompt = `You are a high-performance Executive Agile Coach analyzing the active task list for: ${state.username}.\n\n`;
+    prompt += "Kyle's pending checklist items:\n";
+    activeTasks.forEach((t, index) => {
+        prompt += `- ${t.name} [Category: ${t.category}${t.due_date ? `, Due: ${new Date(t.due_date).toLocaleDateString()}` : ''}]\n`;
+    });
+    
+    prompt += `\nProvide ONE actionable, high-impact execution strategy for Kyle to build momentum.\n`;
+    prompt += "CRITICAL RULES:\n";
+    prompt += "1. Keep the tip strictly UNDER 20 words.\n";
+    prompt += "2. Address him directly with a strong advice verb (e.g. 'Tackle X first to...', 'Block out 2 hours to...', 'Use Y to...').\n";
+    prompt += "3. Focus strictly on energy optimization and focus preservation.\n";
+    prompt += "4. Avoid any intro/outro fillers. Return ONLY the strategy text.";
+    
+    try {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.7,
+                maxOutputTokens: 100
+            }
+        });
+        
+        let tip = response.text.trim();
+        if (tip.startsWith('"') && tip.endsWith('"')) {
+            tip = tip.substring(1, tip.length - 1).trim();
+        }
+        
+        responseEl.innerText = tip;
+        // Save to cache
+        localStorage.setItem("vibe_task_coach_tip", tip);
+    } catch (e) {
+        console.error("AI Task Coach error:", e);
+        responseEl.innerText = `⚠️ Unable to load AI strategy (Error: ${e.message || e}). Your checklist is saved safely!`;
+    } finally {
+        spinner.classList.add("hidden");
+    }
+};
 
 // ==========================================
 // ========== 8. BLIP CAPTURE LAYER =========
@@ -1830,6 +1919,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-close-quick-drawer").onclick = () => window.toggleQuickDrawer(false);
     document.getElementById("quick-drawer-overlay").onclick = () => window.toggleQuickDrawer(false);
     document.getElementById("btn-toggle-quick-record").onclick = window.toggleQuickRecordState;
+    
+    const btnTaskCoach = document.getElementById("btn-task-coach");
+    if (btnTaskCoach) {
+        btnTaskCoach.onclick = () => {
+            const panel = document.getElementById("task-coach-panel");
+            if (panel) {
+                const isHidden = panel.classList.contains("hidden");
+                window.toggleTaskCoachPanel(isHidden);
+            }
+        };
+    }
     
     document.getElementById("btn-quick-file-task").onclick = () => {
         const subDrawer = document.getElementById("quick-task-options");

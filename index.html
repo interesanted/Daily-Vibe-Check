@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=1.5">
+    <link rel="stylesheet" href="styles.css?v=1.6">
     
     <!-- Supabase JS Client & Google GenAI SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -438,6 +438,31 @@
                             <span>Hide Completed</span>
                         </label>
                         <span id="task-completed-badge" class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest bg-cozy-500/10 border border-cozy-500/20 px-3 py-1 rounded-full">Completed: 0/0</span>
+                        
+                        <!-- Glowing AI Coach Lightbulb Button -->
+                        <button id="btn-task-coach" class="p-1.5 bg-amber-500/10 hover:bg-amber-500/25 text-amber-600 border border-amber-500/25 rounded-full hover:border-amber-500/50 transition-all select-none flex items-center justify-center relative animate-pulse" title="Ask AI Coach for Execution Strategy">
+                            <span class="text-xs">💡</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Collapsible Cozy AI Task Coaching Panel -->
+                <div id="task-coach-panel" class="hidden bg-amber-500/[0.02] border border-amber-500/15 rounded-3xl p-5 relative overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-3 duration-300">
+                    <div class="absolute right-0 top-0 w-16 h-16 bg-amber-500/[0.04] rounded-full blur-xl"></div>
+                    <div class="flex justify-between items-center pb-2 border-b border-amber-500/10 mb-3 select-none">
+                        <span class="text-[9px] font-extrabold text-amber-600 uppercase tracking-widest flex items-center">
+                            <span>💡</span> <span class="ml-1">AI Execution Strategy</span>
+                        </span>
+                        <button onclick="window.toggleTaskCoachPanel(false)" class="text-xs text-cozy-700/40 hover:text-cozy-500 leading-none">&times;</button>
+                    </div>
+                    <p id="task-coach-response" class="text-xs text-cozy-700/80 leading-relaxed font-light italic">
+                        Click the lightbulb to analyze your pending list and generate a high-performance execution strategy...
+                    </p>
+                    
+                    <!-- Coach loading spinner -->
+                    <div id="task-coach-spinner" class="hidden flex items-center space-x-2 pt-2.5">
+                        <div class="custom-spinner !w-5 !h-5 !border-[2px] !border-t-amber-500 !border-amber-500/10"></div>
+                        <span class="text-[9px] text-cozy-700/50 italic font-semibold uppercase tracking-wider">AI Coach is prioritizing energy flows...</span>
                     </div>
                 </div>
                 
@@ -648,7 +673,7 @@
     </div>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=1.5"></script>
+    <script type="module" src="app.js?v=1.6"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->
