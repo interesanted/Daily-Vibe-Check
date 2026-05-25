@@ -1173,7 +1173,7 @@ window.runTaskCoach = async function() {
     spinner.classList.remove("hidden");
     responseEl.innerText = "Coaching your action priority list...";
     
-    let prompt = `You are a high-performance Executive Agile Coach analyzing the active task list for: ${state.username}.\n\n`;
+    let prompt = `You are Bill Campbell, the famous Silicon Valley 'Trillion Dollar Coach', analyzing Kyle's pending checklist items to give him high-impact, direct executive coaching.\n\n`;
     prompt += "Kyle's pending checklist items:\n";
     activeTasks.forEach((t, index) => {
         prompt += `- ${t.name} [Category: ${t.category}${t.due_date ? `, Due: ${new Date(t.due_date).toLocaleDateString()}` : ''}]\n`;
@@ -1182,7 +1182,7 @@ window.runTaskCoach = async function() {
     prompt += `\nProvide ONE actionable, high-impact execution strategy for Kyle to build momentum.\n`;
     prompt += "CRITICAL RULES:\n";
     prompt += "1. Keep the tip strictly UNDER 20 words.\n";
-    prompt += "2. Address him directly with a strong advice verb (e.g. 'Tackle X first to...', 'Block out 2 hours to...', 'Use Y to...').\n";
+    prompt += "2. Address him directly using Bill Campbell's signature direct, warm, high-energy, and pragmatically supportive voice (no corporate buzzwords, focus on grit, trust, and execution).\n";
     prompt += "3. Focus strictly on energy optimization and focus preservation.\n";
     prompt += "4. Avoid any intro/outro fillers. Return ONLY the strategy text.";
     
@@ -1312,7 +1312,7 @@ async function runAIAgileCoach() {
     // Get last 5 AARs
     const recentAars = state.aars.slice(0, 5).reverse();
     
-    let prompt = `You are an elite Agile Performance Coach analyzing the After Action Reviews (AARs) for team member: ${state.username}.\n\n`;
+    let prompt = `You are Bill Campbell, the famous Silicon Valley 'Trillion Dollar Coach', analyzing the After Action Reviews (AARs) to coach Kyle on leadership, execution, and trust.\n\n`;
     prompt += "Recent historical logs (oldest to newest):\n";
     
     recentAars.forEach((h, index) => {
@@ -1322,12 +1322,12 @@ async function runAIAgileCoach() {
         prompt += `What to do differently: ${h.next_steps}\n\n`;
     });
     
-    prompt += `Based on these patterns, act as a highly pattern-aware Agile Coach and provide one actionable productivity tip for ${state.username}.\n`;
+    prompt += `Based on these patterns, act as Kyle's high-energy coach and provide one actionable productivity tip for ${state.username}.\n`;
     prompt += "CRITICAL RULES:\n";
     prompt += "1. Keep the tip strictly UNDER 50 words.\n";
-    prompt += "2. Address the user directly (e.g. 'You should...').\n";
-    prompt += "3. Avoid conversational fillers like 'Here is your tip'. Go straight to the advice.\n";
-    prompt += "4. Rely on specific patterns you noticed in their logs.";
+    prompt += "2. Address Kyle directly using Bill's signature high-energy, direct, and empathetic coaching style (tough-love but deeply supportive).\n";
+    prompt += "3. Avoid conversational fillers like 'Here is your tip'. Go straight to the execution wisdom.\n";
+    prompt += "4. Focus on patterns of grit, focus, and prioritization in his logs.";
     
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -1420,7 +1420,7 @@ async function compileWeeklyVibeReport() {
     
     const logs = getWeeklyLogs();
     
-    let prompt = `You are a high-level performance psychologist, agile team coach, and emotional intelligence researcher doing a comprehensive "Weekly Vibe Report" for: ${state.username}.\n\n`;
+    let prompt = `You are Bill Campbell, the famous Silicon Valley 'Trillion Dollar Coach', doing a comprehensive high-performance "Weekly Vibe Report" for Kyle.\n\n`;
     prompt += "Here is the raw context of all entries Kyle logged over the last 7 days:\n\n";
     prompt += `--- DEEP JOURNALS ---\n- ${logs.journals || 'None'}\n\n`;
     prompt += `--- DYNAMIC TASKS CHECKLIST ---\n- ${logs.tasks || 'None'}\n\n`;
@@ -1433,7 +1433,7 @@ async function compileWeeklyVibeReport() {
     prompt += "3. 'personal_percentage': An integer (0-100) estimating their focus on Personal tasks, self-reflection, and mindfulness.\n";
     prompt += "4. 'ideas_percentage': An integer (0-100) estimating their focus on creativity, ideas, and future scaling. (Ensure work, personal, and ideas percentages add up to exactly 100!).\n";
     prompt += "5. 'cognitive_friction': A 2-sentence summary of the main subconscious blockers or bottlenecks they encountered.\n";
-    prompt += "6. 'coach_letter': A beautiful, empathy-rich, encouraging narrative letter addressing Kyle directly (under 120 words). Validate his weekly journey, celebrate his specific wins, and give him one key intention adjustment for the coming week.\n";
+    prompt += "6. 'coach_letter': An empathy-rich, direct, high-energy leadership letter from the perspective of Bill Campbell (Silicon Valley's 'Trillion Dollar Coach') addressing Kyle directly (under 120 words). Validate his week, celebrate his grit, be tough-love where needed, and give him one key execution intention for the coming week.\n";
     
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
