@@ -176,6 +176,10 @@ window.navigate = function(viewName) {
     } else if (viewName === "JOURNAL") {
         targetId = "view-journal";
         startJournalClock();
+        // Load user preferred paper style and update live metrics
+        const preferredStyle = localStorage.getItem("vibe_paper_style") || "LINED";
+        window.setPaperStyle(preferredStyle);
+        window.updateJournalMetrics();
     } else if (viewName === "TASK") {
         targetId = "view-task";
         renderTaskCategorySelectors();
@@ -770,6 +774,85 @@ function toggleVoiceRecording() {
 // ==========================================
 // ========== 6. JOURNAL CORE LAYER =========
 // ==========================================
+
+window.setPaperStyle = function(style) {
+    const textarea = document.getElementById("journal-input");
+    if (!textarea) return;
+    
+    // Clear all style classes
+    textarea.classList.remove("paper-lined", "paper-grid", "paper-linen");
+    
+    // Reset all swatch buttons
+    document.querySelectorAll(".paper-swatch").forEach(btn => {
+        btn.classList.remove("bg-cozy-500", "text-white", "border-cozy-500", "shadow-sm");
+        btn.classList.add("bg-white", "text-cozy-700", "border-cozy-500/15");
+    });
+    
+    let activeBtnId = "";
+    if (style === "LINED") {
+        textarea.classList.add("paper-lined");
+        activeBtnId = "btn-paper-lined";
+    } else if (style === "GRID") {
+        textarea.classList.add("paper-grid");
+        activeBtnId = "btn-paper-grid";
+    } else if (style === "LINEN") {
+        textarea.classList.add("paper-linen");
+        activeBtnId = "btn-paper-linen";
+    }
+    
+    const activeBtn = document.getElementById(activeBtnId);
+    if (activeBtn) {
+        activeBtn.classList.remove("bg-white", "text-cozy-700", "border-cozy-500/15");
+        activeBtn.classList.add("bg-cozy-500", "text-white", "border-cozy-500", "shadow-sm");
+    }
+    
+    localStorage.setItem("vibe_paper_style", style);
+};
+
+window.insertFormatting = function(prefix, suffix = "") {
+    const textarea = document.getElementById("journal-input");
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    const selectedText = text.substring(start, end);
+    const replacement = prefix + selectedText + suffix;
+    
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    
+    // Retain editor focus and highlight the inserted region
+    textarea.focus();
+    textarea.selectionStart = start + prefix.length;
+    textarea.selectionEnd = start + prefix.length + selectedText.length;
+    
+    window.updateJournalMetrics();
+};
+
+window.updateJournalMetrics = function() {
+    const textarea = document.getElementById("journal-input");
+    const wordCountEl = document.getElementById("journal-word-count");
+    const charCountEl = document.getElementById("journal-char-count");
+    const readTimeEl = document.getElementById("journal-read-time");
+    
+    if (!textarea) return;
+    
+    const text = textarea.value;
+    const chars = text.length;
+    
+    // Clean word count extraction
+    const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+    
+    // Calculate cozy reading time (approx 200 words per minute)
+    const readMinutes = Math.ceil(words / 200);
+    
+    if (wordCountEl) wordCountEl.innerText = `✍️ ${words} words`;
+    if (charCountEl) charCountEl.innerText = `🔤 ${chars} chars`;
+    if (readTimeEl) {
+        readTimeEl.innerText = `⏱️ ${readMinutes} min read`;
+    }
+};
 
 function handleSaveJournal() {
     const input = document.getElementById("journal-input");
@@ -1708,6 +1791,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inputs & Forms Actions
     document.getElementById("btn-journal-save").onclick = handleSaveJournal;
     document.getElementById("btn-journal-mic").onclick = toggleVoiceRecording;
+    
+    const journalInput = document.getElementById("journal-input");
+    if (journalInput) {
+        journalInput.addEventListener("input", window.updateJournalMetrics);
+    }
     
     document.getElementById("btn-task-save").onclick = handleSaveTask;
     document.getElementById("btn-blip-save").onclick = handleSaveBlip;

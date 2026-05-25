@@ -178,18 +178,59 @@
             </div>
 
             <!-- 📝 2. JOURNAL VIEW -->
-            <div id="view-journal" class="page-view w-full max-w-xl mx-auto space-y-6">
+            <div id="view-journal" class="page-view w-full max-w-xl mx-auto space-y-4">
                 <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
                     <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Deep Focus Journal</h3>
                     <span id="journal-clock" class="text-xs text-cozy-700/50 font-light">Time</span>
                 </div>
                 
+                <!-- Notepad Swatches -->
+                <div class="flex items-center justify-between bg-white border border-cozy-500/10 p-3 rounded-2xl shadow-sm select-none">
+                    <span class="text-[9px] font-bold text-cozy-700/60 uppercase tracking-widest leading-none">Notepad Style</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="setPaperStyle('LINED')" id="btn-paper-lined" class="paper-swatch active px-3 py-1.5 rounded-lg text-[9px] font-bold border border-cozy-500/25 bg-cozy-500 text-white shadow-sm hover:bg-cozy-500/90 uppercase tracking-wider transition-all select-none flex items-center space-x-1.5">
+                            <span>📝</span> <span>Lined</span>
+                        </button>
+                        <button onclick="setPaperStyle('GRID')" id="btn-paper-grid" class="paper-swatch px-3 py-1.5 rounded-lg text-[9px] font-bold border border-cozy-500/15 bg-white text-cozy-700 hover:bg-cozy-100 uppercase tracking-wider transition-all select-none flex items-center space-x-1.5">
+                            <span>🏁</span> <span>Grid</span>
+                        </button>
+                        <button onclick="setPaperStyle('LINEN')" id="btn-paper-linen" class="paper-swatch px-3 py-1.5 rounded-lg text-[9px] font-bold border border-cozy-500/15 bg-white text-cozy-700 hover:bg-cozy-100 uppercase tracking-wider transition-all select-none flex items-center space-x-1.5">
+                            <span>🧺</span> <span>Linen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cozy Pencil Tray Toolbar -->
+                <div class="pencil-tray flex items-center justify-between px-3.5 py-2.5 select-none">
+                    <span class="text-[8px] font-extrabold text-cozy-700/50 uppercase tracking-widest">Pencil Tray</span>
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="insertFormatting('**', '**')" class="pencil-btn" title="Bold Text">B</button>
+                        <button onclick="insertFormatting('*', '*')" class="pencil-btn italic" title="Italic Text">I</button>
+                        <button onclick="insertFormatting('==', '==')" class="pencil-btn" title="Highlight Text">🖍️</button>
+                        <button onclick="insertFormatting('- ')" class="pencil-btn" title="Bullet List">•</button>
+                        <button onclick="insertFormatting('1. ')" class="pencil-btn" title="Numbered List">1.</button>
+                        <button onclick="insertFormatting('[ ] ')" class="pencil-btn" title="Task Checklist">☑</button>
+                    </div>
+                </div>
+                
                 <div class="space-y-4">
-                    <div class="relative">
-                        <textarea id="journal-input" placeholder="Start typing your deep reflection here... or click the microphone to speak!" class="w-full h-64 p-6 rounded-2xl form-input text-sm leading-relaxed resize-none shadow-sm"></textarea>
+                    <div class="notebook-sheet relative w-full">
+                        <!-- Gold Spiral Coils Column on Left Margin -->
+                        <div class="absolute left-2.5 top-0 bottom-0 w-3 flex flex-col justify-around py-6 pointer-events-none z-20">
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                            <div class="notebook-coil"></div>
+                        </div>
+                        
+                        <textarea id="journal-input" placeholder="Start typing your deep reflection here... or click the microphone to speak!" class="w-full h-72 paper-lined text-sm leading-relaxed resize-none bg-transparent outline-none focus:outline-none focus:ring-0 placeholder-cozy-700/30"></textarea>
                         
                         <!-- Audio Equalizer / Status (Hidden by default) -->
-                        <div id="voice-status-container" class="hidden absolute top-4 right-4 bg-white/90 border border-cozy-500/20 rounded-xl px-4 py-2 flex items-center space-x-3 backdrop-blur-md shadow-md">
+                        <div id="voice-status-container" class="hidden absolute top-4 right-4 bg-white/90 border border-cozy-500/20 rounded-xl px-4 py-2 flex items-center space-x-3 backdrop-blur-md shadow-md z-30">
                             <span class="w-2 h-2 rounded-full bg-cozy-500 animate-pulse"></span>
                             <div class="voice-wave">
                                 <div class="wave-bar"></div>
@@ -204,6 +245,16 @@
                         </div>
                     </div>
                     
+                    <!-- Live Writing Stamp-Style Metrics -->
+                    <div class="flex justify-between items-center bg-white border border-cozy-500/10 rounded-2xl p-3 px-4 text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest select-none shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <span id="journal-word-count">✍️ 0 words</span>
+                            <span class="text-cozy-500/20">|</span>
+                            <span id="journal-char-count">🔤 0 chars</span>
+                        </div>
+                        <span id="journal-read-time" class="bg-cozy-500/10 border border-cozy-500/25 px-3 py-1 rounded-full text-[9px] text-cozy-500">⏱️ 0 min read</span>
+                    </div>
+
                     <div class="flex items-center space-x-3 w-full">
                         <!-- Microphone Capture Button -->
                         <button id="btn-journal-mic" class="p-4 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-2xl transition-all shadow-sm relative" title="Toggle Voice Dictation">
