@@ -26,7 +26,10 @@ let state = {
     calendarMonth: new Date().getMonth(),
     selectedFilterDate: null,
     vibeTab: "DAILY",
-    weeklyReport: null
+    weeklyReport: null,
+    isQuickRecording: false,
+    quickTranscript: "",
+    quickTaskCategory: "Work"
 };
 
 let supabaseClient = null;
@@ -249,6 +252,196 @@ window.toggleInputMask = function(inputId) {
 // ==========================================
 // ========== 5. FLOW STREAK & CALENDAR CORES 
 // ==========================================
+
+// ==========================================
+// ========== 5. FLOW STREAK & CALENDAR CORES 
+// ==========================================
+
+let quickSpeechRecognition = null;
+let quickLastProcessedIndex = -1;
+
+function setupQuickDictation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.warn("Speech Recognition API not supported for Quick Dictate.");
+        const btn = document.getElementById("btn-quick-mic");
+        if (btn) btn.classList.add("hidden");
+        return;
+    }
+    
+    quickSpeechRecognition = new SpeechRecognition();
+    quickSpeechRecognition.continuous = true;
+    quickSpeechRecognition.interimResults = true;
+    quickSpeechRecognition.lang = 'en-US';
+    
+    const transcriptArea = document.getElementById("quick-transcript-area");
+    const waveContainer = document.getElementById("quick-wave-container");
+    const toggleBtn = document.getElementById("btn-toggle-quick-record");
+    
+    quickSpeechRecognition.onstart = () => {
+        state.isQuickRecording = true;
+        quickLastProcessedIndex = -1;
+        state.quickTranscript = "";
+        if (transcriptArea) transcriptArea.value = "";
+        
+        const filingActions = document.getElementById("quick-filing-actions");
+        const taskOptions = document.getElementById("quick-task-options");
+        if (filingActions) filingActions.classList.add("hidden");
+        if (taskOptions) taskOptions.classList.add("hidden");
+        
+        if (toggleBtn) {
+            toggleBtn.className = "w-full py-3 bg-[#E07A5F] hover:bg-[#E07A5F]/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
+            toggleBtn.innerHTML = "<span class='animate-pulse'>🛑</span> <span>Stop Recording & File</span>";
+        }
+        
+        if (waveContainer) waveContainer.classList.remove("hidden");
+    };
+    
+    quickSpeechRecognition.onend = () => {
+        state.isQuickRecording = false;
+        
+        const filingActions = document.getElementById("quick-filing-actions");
+        if (filingActions) filingActions.classList.remove("hidden");
+        
+        if (toggleBtn) {
+            toggleBtn.className = "w-full py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
+            toggleBtn.innerHTML = "<span>🎙️</span> <span>Redictate Thought</span>";
+        }
+        
+        if (waveContainer) waveContainer.classList.add("hidden");
+    };
+    
+    quickSpeechRecognition.onerror = (event) => {
+        console.error("Quick speech recognition error:", event.error);
+        quickSpeechRecognition.stop();
+    };
+    
+    quickSpeechRecognition.onresult = (event) => {
+        let interimConcat = '';
+        
+        for (let i = 0; i < event.results.length; ++i) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                if (i > quickLastProcessedIndex) {
+                    state.quickTranscript += result[0].transcript.trim() + " ";
+                    quickLastProcessedIndex = i;
+                }
+            } else {
+                interimConcat += result[0].transcript;
+            }
+        }
+        
+        if (transcriptArea) {
+            transcriptArea.value = state.quickTranscript + interimConcat;
+            transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        }
+    };
+}
+
+window.toggleQuickDrawer = function(show) {
+    const drawer = document.getElementById("quick-dictate-drawer");
+    const overlay = document.getElementById("quick-drawer-overlay");
+    
+    if (!drawer || !overlay) return;
+    
+    if (show) {
+        drawer.classList.add("active");
+        overlay.classList.add("active");
+        
+        // Auto-start listening on slide-up
+        setTimeout(() => {
+            if (quickSpeechRecognition && !state.isQuickRecording) {
+                quickSpeechRecognition.start();
+            }
+        }, 300);
+    } else {
+        drawer.classList.remove("active");
+        overlay.classList.remove("active");
+        
+        if (quickSpeechRecognition && state.isQuickRecording) {
+            quickSpeechRecognition.stop();
+        }
+    }
+};
+
+window.toggleQuickRecordState = function() {
+    if (!quickSpeechRecognition) return;
+    
+    if (state.isQuickRecording) {
+        quickSpeechRecognition.stop();
+    } else {
+        quickSpeechRecognition.start();
+    }
+};
+
+window.setQuickTaskCategory = function(category) {
+    state.quickTaskCategory = category;
+    
+    const workBtn = document.getElementById("btn-quick-task-work");
+    const personalBtn = document.getElementById("btn-quick-task-personal");
+    const ideasBtn = document.getElementById("btn-quick-task-ideas");
+    
+    if (!workBtn || !personalBtn || !ideasBtn) return;
+    
+    const activeStyle = "flex-1 py-2 text-[10px] font-bold uppercase rounded-lg border bg-cozy-500 text-white border-cozy-500 shadow-sm transition-all select-none";
+    const inactiveStyle = "flex-1 py-2 text-[10px] font-bold uppercase rounded-lg border bg-white text-cozy-700/80 border-cozy-500/10 hover:bg-cozy-100 transition-all select-none";
+    
+    workBtn.className = category === "Work" ? activeStyle : inactiveStyle;
+    personalBtn.className = category === "Personal" ? activeStyle : inactiveStyle;
+    ideasBtn.className = category === "Ideas" ? activeStyle : inactiveStyle;
+};
+
+window.routeQuickDictate = async function(type) {
+    const transcriptArea = document.getElementById("quick-transcript-area");
+    if (!transcriptArea) return;
+    
+    const text = transcriptArea.value.trim();
+    if (!text) {
+        alert("Please dictate some text before filing.");
+        return;
+    }
+    
+    if (type === "JOURNAL") {
+        const newEntry = {
+            id: "j-" + Date.now(),
+            username: state.username,
+            content: text,
+            timestamp: new Date().toISOString()
+        };
+        state.journals.unshift(newEntry);
+        saveLocalCache("journals");
+        pushToCloud("journals", newEntry);
+        alert("📝 Journal logged successfully!");
+        window.toggleQuickDrawer(false);
+        
+    } else if (type === "BLIP") {
+        const newBlip = {
+            id: "b-" + Date.now(),
+            username: state.username,
+            content: text,
+            timestamp: new Date().toISOString()
+        };
+        state.blips.unshift(newBlip);
+        saveLocalCache("blips");
+        pushToCloud("blips", newBlip);
+        alert("⚡ Blip captured instantly!");
+        window.toggleQuickDrawer(false);
+        
+    } else if (type === "TASK") {
+        const newTask = {
+            id: "t-" + Date.now(),
+            name: text,
+            category: state.quickTaskCategory,
+            completed: false,
+            timestamp: new Date().toISOString()
+        };
+        state.tasks.unshift(newTask);
+        saveLocalCache("tasks");
+        pushToCloud("tasks", newTask);
+        alert("🚀 Task action item filed successfully!");
+        window.toggleQuickDrawer(false);
+    }
+};
 
 function getLocalDateString(date) {
     const yyyy = date.getFullYear();
@@ -1493,6 +1686,30 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-run-vibecheck").onclick = compileVibeCheck;
     document.getElementById("btn-run-weekly-vibe").onclick = compileWeeklyVibeReport;
     document.getElementById("btn-export-sheets").onclick = handleExportSheets;
+    
+    // Quick-Dictate listeners
+    setupQuickDictation();
+    
+    const btnQuickMic = document.getElementById("btn-quick-mic");
+    if (btnQuickMic) {
+        btnQuickMic.onclick = () => window.toggleQuickDrawer(true);
+    }
+    
+    document.getElementById("btn-close-quick-drawer").onclick = () => window.toggleQuickDrawer(false);
+    document.getElementById("quick-drawer-overlay").onclick = () => window.toggleQuickDrawer(false);
+    document.getElementById("btn-toggle-quick-record").onclick = window.toggleQuickRecordState;
+    
+    document.getElementById("btn-quick-file-task").onclick = () => {
+        const subDrawer = document.getElementById("quick-task-options");
+        if (subDrawer) {
+            subDrawer.classList.toggle("hidden");
+            window.setQuickTaskCategory("Work");
+        }
+    };
+    
+    document.getElementById("btn-quick-task-work").onclick = () => window.setQuickTaskCategory("Work");
+    document.getElementById("btn-quick-task-personal").onclick = () => window.setQuickTaskCategory("Personal");
+    document.getElementById("btn-quick-task-ideas").onclick = () => window.setQuickTaskCategory("Ideas");
     
     // Calendar Month Navigation Buttons
     document.getElementById("btn-cal-prev").onclick = () => {
