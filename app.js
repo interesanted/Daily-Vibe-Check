@@ -249,6 +249,42 @@ window.toggleInputMask = function(inputId) {
     }
 };
 
+window.showToast = function(message) {
+    let container = document.getElementById("cozy-toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "cozy-toast-container";
+        container.className = "fixed top-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col space-y-2 pointer-events-none w-full max-w-xs px-4";
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement("div");
+    toast.className = "bg-white border border-cozy-500/25 text-cozy-700 text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2.5 transition-all duration-300 translate-y-[-12px] opacity-0 pointer-events-auto select-none bg-cozy-50/95 backdrop-blur-md";
+    
+    let icon = "✨";
+    if (message.includes("Journal") || message.includes("journal")) icon = "📝";
+    else if (message.includes("Blip") || message.includes("Thought") || message.includes("thought")) icon = "⚡";
+    else if (message.includes("Task") || message.includes("task")) icon = "🚀";
+    else if (message.includes("settings") || message.includes("Settings") || message.includes("keys")) icon = "⚙️";
+    else if (message.includes("AAR")) icon = "👥";
+    else if (message.includes("Backup") || message.includes("backup") || message.includes("Export") || message.includes("export")) icon = "💾";
+    else if (message.includes("Warning") || message.includes("configure") || message.includes("Please") || message.includes("API Key") || message.includes("unable") || message.includes("Unable")) icon = "⚠️";
+    
+    toast.innerHTML = `<span class="text-sm">${icon}</span> <span class="leading-normal">${message}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.remove("translate-y-[-12px]", "opacity-0");
+    }, 20);
+    
+    setTimeout(() => {
+        toast.classList.add("translate-y-[-12px]", "opacity-0");
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 2800);
+};
+
 // ==========================================
 // ========== 5. FLOW STREAK & CALENDAR CORES 
 // ==========================================
@@ -258,7 +294,6 @@ window.toggleInputMask = function(inputId) {
 // ==========================================
 
 let quickSpeechRecognition = null;
-let quickLastProcessedIndex = -1;
 
 function setupQuickDictation() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -280,7 +315,6 @@ function setupQuickDictation() {
     
     quickSpeechRecognition.onstart = () => {
         state.isQuickRecording = true;
-        quickLastProcessedIndex = -1;
         state.quickTranscript = "";
         if (transcriptArea) transcriptArea.value = "";
         
@@ -317,22 +351,20 @@ function setupQuickDictation() {
     };
     
     quickSpeechRecognition.onresult = (event) => {
+        let finalConcat = '';
         let interimConcat = '';
         
         for (let i = 0; i < event.results.length; ++i) {
             const result = event.results[i];
             if (result.isFinal) {
-                if (i > quickLastProcessedIndex) {
-                    state.quickTranscript += result[0].transcript.trim() + " ";
-                    quickLastProcessedIndex = i;
-                }
+                finalConcat += result[0].transcript.trim() + " ";
             } else {
                 interimConcat += result[0].transcript;
             }
         }
         
         if (transcriptArea) {
-            transcriptArea.value = state.quickTranscript + interimConcat;
+            transcriptArea.value = finalConcat + interimConcat;
             transcriptArea.scrollTop = transcriptArea.scrollHeight;
         }
     };
@@ -397,7 +429,7 @@ window.routeQuickDictate = async function(type) {
     
     const text = transcriptArea.value.trim();
     if (!text) {
-        alert("Please dictate some text before filing.");
+        window.showToast("Please dictate some text before filing.");
         return;
     }
     
@@ -411,7 +443,7 @@ window.routeQuickDictate = async function(type) {
         state.journals.unshift(newEntry);
         saveLocalCache("journals");
         pushToCloud("journals", newEntry);
-        alert("📝 Journal logged successfully!");
+        window.showToast("Journal logged successfully!");
         window.toggleQuickDrawer(false);
         
     } else if (type === "BLIP") {
@@ -424,7 +456,7 @@ window.routeQuickDictate = async function(type) {
         state.blips.unshift(newBlip);
         saveLocalCache("blips");
         pushToCloud("blips", newBlip);
-        alert("⚡ Blip captured instantly!");
+        window.showToast("Blip captured instantly!");
         window.toggleQuickDrawer(false);
         
     } else if (type === "TASK") {
@@ -438,7 +470,7 @@ window.routeQuickDictate = async function(type) {
         state.tasks.unshift(newTask);
         saveLocalCache("tasks");
         pushToCloud("tasks", newTask);
-        alert("🚀 Task action item filed successfully!");
+        window.showToast("Task action item filed successfully!");
         window.toggleQuickDrawer(false);
     }
 };
@@ -669,8 +701,7 @@ function setupVoiceDictation() {
     speechRecognition.onstart = () => {
         isRecording = true;
         voiceBaseText = journalInput.value.trim();
-        if (voiceBaseText) voiceBaseText += "\n\n"; // Cozy paragraph break if appending to existing text
-        lastProcessedIndex = -1; // Reset index on start
+        if (voiceBaseText) voiceBaseText += "\n\n"; // Cozy paragraph break
         document.getElementById("btn-journal-mic").classList.add("border-red-500", "bg-red-950/40");
         document.getElementById("btn-journal-mic").innerHTML = "<span class='text-xl animate-pulse'>🛑</span>";
         waveContainer.classList.remove("hidden");
@@ -678,6 +709,7 @@ function setupVoiceDictation() {
     
     speechRecognition.onend = () => {
         isRecording = false;
+        voiceBaseText = journalInput.value.trim();
         document.getElementById("btn-journal-mic").classList.remove("border-red-500", "bg-red-950/40");
         document.getElementById("btn-journal-mic").innerHTML = "<span class='text-xl'>🎙️</span>";
         waveContainer.classList.add("hidden");
@@ -689,32 +721,26 @@ function setupVoiceDictation() {
     };
     
     speechRecognition.onresult = (event) => {
+        let finalConcat = '';
         let interimConcat = '';
         
         for (let i = 0; i < event.results.length; ++i) {
             const result = event.results[i];
             if (result.isFinal) {
-                // Only lock in and append final results we haven't processed yet
-                if (i > lastProcessedIndex) {
-                    voiceBaseText += result[0].transcript.trim() + " ";
-                    lastProcessedIndex = i;
-                }
+                finalConcat += result[0].transcript.trim() + " ";
             } else {
                 interimConcat += result[0].transcript;
             }
         }
         
-        // Display permanently locked text plus active interim speech
-        journalInput.value = voiceBaseText + interimConcat;
-        
-        // Scroll to bottom
+        journalInput.value = voiceBaseText + finalConcat + interimConcat;
         journalInput.scrollTop = journalInput.scrollHeight;
     };
 }
 
 function toggleVoiceRecording() {
     if (!speechRecognition) {
-        alert("🎤 Local Web Speech is not fully supported in this browser. Please use Chrome, Edge, or Safari Mobile.");
+        window.showToast("Local Web Speech is not fully supported in this browser. Please use Chrome, Edge, or Safari Mobile.");
         return;
     }
     
@@ -734,7 +760,7 @@ function handleSaveJournal() {
     const content = input.value.trim();
     
     if (!content) {
-        alert("Please write down a journal entry first.");
+        window.showToast("Please write down a journal entry first.");
         return;
     }
     
@@ -753,7 +779,7 @@ function handleSaveJournal() {
     input.value = "";
     
     // Trigger optimistic success notice
-    alert("📝 Journal logged successfully in local cache!");
+    window.showToast("Journal logged successfully in local cache!");
     
     // Asynchronously push to cloud Supabase
     pushToCloud("journals", newEntry);
@@ -796,7 +822,7 @@ function handleSaveTask() {
     const dueDate = dueInput.value ? dueInput.value : null;
     
     if (!taskName) {
-        alert("Please type a task action description.");
+        window.showToast("Please type a task action description.");
         return;
     }
     
@@ -817,7 +843,7 @@ function handleSaveTask() {
     input.value = "";
     dueInput.value = "";
     
-    alert("🚀 Task added successfully!");
+    window.showToast("Task added successfully!");
     
     // Push to Supabase
     pushToCloud("tasks", newTask);
@@ -1008,7 +1034,7 @@ function handleSaveBlip() {
     const text = input.value.trim();
     
     if (!text) {
-        alert("Please enter your thought blip.");
+        window.showToast("Please enter your thought blip.");
         return;
     }
     
@@ -1025,7 +1051,7 @@ function handleSaveBlip() {
     // Reset field
     input.value = "";
     
-    alert("⚡ Thought captured instantly!");
+    window.showToast("Thought captured instantly!");
     
     pushToCloud("blips", newBlip);
     
@@ -1042,7 +1068,7 @@ function handleSaveAAR() {
     const next = document.getElementById("aar-next-input").value.trim();
     
     if (!right || !wrong || !next) {
-        alert("Please fill out all three After Action Review prompt sections.");
+        window.showToast("Please fill out all three After Action Review prompt sections.");
         return;
     }
     
@@ -1066,6 +1092,8 @@ function handleSaveAAR() {
     
     // Re-draw local History list on the side
     renderAARGrid();
+    
+    window.showToast("AAR entry logged and sent to coach!");
     
     // Push asynchronously to Supabase
     pushToCloud("aars", newAAR);
@@ -1191,7 +1219,7 @@ async function compileWeeklyVibeReport() {
     const container = document.getElementById("vibe-weekly-container");
     
     if (!apiKey) {
-        alert("⚠️ Please configure your Gemini API Key in Settings (⚙️) to run the Weekly Vibe Report!");
+        window.showToast("Please configure your Gemini API Key in Settings (⚙️) to run the Weekly Vibe Report!");
         return;
     }
     
@@ -1355,7 +1383,7 @@ async function compileVibeCheck() {
     const container = document.getElementById("vibe-dashboard-container");
     
     if (!apiKey) {
-        alert("⚠️ Please configure your Gemini API Key in Settings (⚙️) to run the Vibe Check!");
+        window.showToast("Please configure your Gemini API Key in Settings (⚙️) to run the Vibe Check!");
         return;
     }
     
@@ -1582,9 +1610,9 @@ function handleExportSheets() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        alert("💾 Data backup JSON exported successfully! You can import this into your personal cloud database.");
+        window.showToast("Data backup JSON exported successfully!");
     } catch (e) {
-        alert("Error exporting backup file: " + e.message);
+        window.showToast("Error exporting backup file: " + e.message);
     }
 }
 
@@ -1744,6 +1772,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         saveLocalSettings();
         window.toggleModal("modal-settings", false);
-        alert("✅ Application settings and keys updated successfully!");
+        window.showToast("Application settings and keys updated successfully!");
     };
 });
