@@ -298,89 +298,225 @@ window.showToast = function(message) {
 // ========== 5. FLOW STREAK & CALENDAR CORES 
 // ==========================================
 
-let quickSpeechRecognition = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let activeStream = null;
+let activeRecordingInputId = null;
+let activeRecordingButtonId = null;
 
-function setupQuickDictation() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        console.warn("Speech Recognition API not supported for Quick Dictate.");
-        const btn = document.getElementById("btn-quick-mic");
-        if (btn) btn.classList.add("hidden");
+async function toggleAudioRecording(inputId, buttonId) {
+    const btn = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
+    
+    // Check if we are currently recording for THIS button
+    if (mediaRecorder && activeRecordingButtonId === buttonId) {
+        mediaRecorder.stop();
         return;
     }
     
-    quickSpeechRecognition = new SpeechRecognition();
-    quickSpeechRecognition.continuous = true;
-    quickSpeechRecognition.interimResults = true;
-    quickSpeechRecognition.lang = 'en-US';
+    // If we are recording something else, stop it first
+    if (mediaRecorder) {
+        try {
+            mediaRecorder.stop();
+        } catch (e) {}
+    }
     
-    const transcriptArea = document.getElementById("quick-transcript-area");
-    const waveContainer = document.getElementById("quick-wave-container");
-    const toggleBtn = document.getElementById("btn-toggle-quick-record");
+    // Verify Gemini API key is configured
+    const apiKey = state.gemini_api_key;
+    if (!apiKey) {
+        window.showToast("⚠️ Please enter a Google Gemini API Key in Settings to enable voice dictation.");
+        return;
+    }
     
-    quickSpeechRecognition.onstart = () => {
-        state.isQuickRecording = true;
-        state.quickTranscript = "";
-        if (transcriptArea) transcriptArea.value = "";
+    // Request microphone access
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        activeStream = stream;
+        audioChunks = [];
         
-        const filingActions = document.getElementById("quick-filing-actions");
-        const taskOptions = document.getElementById("quick-task-options");
-        if (filingActions) filingActions.classList.add("hidden");
-        if (taskOptions) taskOptions.classList.add("hidden");
-        
-        if (toggleBtn) {
-            toggleBtn.className = "w-full py-3 bg-[#E07A5F] hover:bg-[#E07A5F]/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
-            toggleBtn.innerHTML = "<span class='animate-pulse'>🛑</span> <span>Stop Recording & File</span>";
+        // Use default browser mimeType (handles webm/opus on Chrome/Android and mp4/aac on Safari/iOS)
+        let options = {};
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            options = { mimeType: 'audio/webm;codecs=opus' };
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options = { mimeType: 'audio/mp4' };
         }
         
-        if (waveContainer) waveContainer.classList.remove("hidden");
-    };
-    
-    quickSpeechRecognition.onend = () => {
-        state.isQuickRecording = false;
+        mediaRecorder = new MediaRecorder(stream, options);
+        activeRecordingInputId = inputId;
+        activeRecordingButtonId = buttonId;
         
-        const filingActions = document.getElementById("quick-filing-actions");
-        if (filingActions) filingActions.classList.remove("hidden");
-        
-        if (toggleBtn) {
-            toggleBtn.className = "w-full py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
-            toggleBtn.innerHTML = "<span>🎙️</span> <span>Redictate Thought</span>";
-        }
-        
-        if (waveContainer) waveContainer.classList.add("hidden");
-    };
-    
-    quickSpeechRecognition.onerror = (event) => {
-        console.error("Quick speech recognition error:", event.error);
-        quickSpeechRecognition.stop();
-    };
-    
-    quickSpeechRecognition.onresult = (event) => {
-        let finalConcat = '';
-        let interimConcat = '';
-        let lastSegment = '';
-        
-        for (let i = 0; i < event.results.length; ++i) {
-            const result = event.results[i];
-            if (result.isFinal) {
-                let currentSegment = result[0].transcript.trim();
-                // Deduplicate Android cumulative speech segments
-                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
-                    finalConcat = currentSegment + " ";
-                } else {
-                    finalConcat += currentSegment + " ";
-                }
-                lastSegment = currentSegment;
-            } else {
-                interimConcat += result[0].transcript;
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
             }
-        }
+        };
         
-        if (transcriptArea) {
-            transcriptArea.value = finalConcat + interimConcat;
-            transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        mediaRecorder.onstart = () => {
+            if (buttonId === "btn-toggle-quick-record") {
+                state.isQuickRecording = true;
+                state.quickTranscript = "";
+                input.value = "";
+                
+                const filingActions = document.getElementById("quick-filing-actions");
+                const taskOptions = document.getElementById("quick-task-options");
+                if (filingActions) filingActions.classList.add("hidden");
+                if (taskOptions) taskOptions.classList.add("hidden");
+                
+                btn.className = "w-full py-3 bg-[#E07A5F] hover:bg-[#E07A5F]/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
+                btn.innerHTML = "<span class='animate-pulse'>🛑</span> <span>Stop Recording & File</span>";
+                
+                const waveContainer = document.getElementById("quick-wave-container");
+                if (waveContainer) waveContainer.classList.remove("hidden");
+            } else {
+                btn.classList.add("border-red-500", "bg-red-950/20", "animate-pulse");
+                btn.innerHTML = "🛑";
+                
+                if (inputId === "journal-input") {
+                    const waveContainer = document.getElementById("voice-status-container");
+                    if (waveContainer) waveContainer.classList.remove("hidden");
+                }
+            }
+            window.showToast("🎙️ Recording started... speak now.");
+        };
+        
+        mediaRecorder.onstop = async () => {
+            // Turn off microphone tracks
+            if (activeStream) {
+                activeStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Revert UI states
+            if (buttonId === "btn-toggle-quick-record") {
+                state.isQuickRecording = false;
+                btn.className = "w-full py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center space-x-2";
+                btn.innerHTML = "<span>🎙️</span> <span>Redictate Thought</span>";
+                
+                const waveContainer = document.getElementById("quick-wave-container");
+                if (waveContainer) waveContainer.classList.add("hidden");
+                
+                const filingActions = document.getElementById("quick-filing-actions");
+                if (filingActions) filingActions.classList.remove("hidden");
+            } else {
+                btn.classList.remove("border-red-500", "bg-red-950/20", "animate-pulse");
+                btn.innerHTML = "🎙️";
+                
+                if (inputId === "journal-input") {
+                    const waveContainer = document.getElementById("voice-status-container");
+                    if (waveContainer) waveContainer.classList.add("hidden");
+                }
+            }
+            
+            if (audioChunks.length === 0) {
+                window.showToast("⚠️ No audio recorded.");
+                resetRecordingState();
+                return;
+            }
+            
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            resetRecordingState();
+            
+            // Display transcription status
+            const originalPlaceholder = input.placeholder || "";
+            input.placeholder = "⚡ Gemini is transcribing your voice... please wait...";
+            input.disabled = true;
+            window.showToast("⚡ Processing audio with Gemini...");
+            
+            try {
+                const base64Data = await blobToBase64(audioBlob);
+                const transcript = await transcribeAudioWithGemini(base64Data, audioBlob.type);
+                
+                if (transcript && transcript.trim()) {
+                    const cleanText = transcript.trim();
+                    const currentValue = input.value.trim();
+                    
+                    if (currentValue) {
+                        input.value = currentValue + " " + cleanText;
+                    } else {
+                        input.value = cleanText;
+                    }
+                    
+                    window.showToast("🎙️ Speech-to-text complete!");
+                    
+                    if (inputId === "journal-input" && window.updateJournalMetrics) {
+                        window.updateJournalMetrics();
+                    }
+                } else {
+                    window.showToast("⚠️ Gemini couldn't hear any speech. Try again.");
+                }
+            } catch (err) {
+                console.error("Gemini audio transcription error:", err);
+                window.showToast(`⚠️ Transcription failed: ${err.message || err}`);
+            } finally {
+                input.placeholder = originalPlaceholder;
+                input.disabled = false;
+                input.focus();
+            }
+        };
+        
+        mediaRecorder.start();
+        
+    } catch (err) {
+        console.error("Microphone access failed:", err);
+        window.showToast("⚠️ Microphone access denied or not supported.");
+        resetRecordingState();
+    }
+}
+
+function resetRecordingState() {
+    mediaRecorder = null;
+    audioChunks = [];
+    activeStream = null;
+    activeRecordingInputId = null;
+    activeRecordingButtonId = null;
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result.split(',')[1];
+            resolve(base64String);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function transcribeAudioWithGemini(base64Data, mimeType) {
+    const apiKey = state.gemini_api_key;
+    if (!apiKey) throw new Error("API Key missing");
+    
+    let cleanMime = mimeType.split(';')[0].trim();
+    if (!cleanMime || cleanMime === "blob") {
+        cleanMime = "audio/webm";
+    }
+    
+    const promptText = "Transcribe the audio exactly. Do not add any preamble, explanation, or commentary. Only return the transcript. If the audio is silent or contains no speech, return an empty string.";
+    
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: [
+            {
+                inlineData: {
+                    data: base64Data,
+                    mimeType: cleanMime
+                }
+            },
+            promptText
+        ],
+        config: {
+            temperature: 0.1
         }
-    };
+    });
+    
+    return response.text;
+}
+
+function setupQuickDictation() {
+    console.log("Quick dictation active");
 }
 
 window.toggleQuickDrawer = function(show) {
@@ -393,30 +529,27 @@ window.toggleQuickDrawer = function(show) {
         drawer.classList.add("active");
         overlay.classList.add("active");
         
-        // Auto-start listening on slide-up
+        const transcriptArea = document.getElementById("quick-transcript-area");
+        if (transcriptArea) transcriptArea.value = "";
+        
+        // Auto-start recording on slide-up
         setTimeout(() => {
-            if (quickSpeechRecognition && !state.isQuickRecording) {
-                quickSpeechRecognition.start();
+            if (!mediaRecorder) {
+                toggleAudioRecording("quick-transcript-area", "btn-toggle-quick-record");
             }
         }, 300);
     } else {
         drawer.classList.remove("active");
         overlay.classList.remove("active");
         
-        if (quickSpeechRecognition && state.isQuickRecording) {
-            quickSpeechRecognition.stop();
+        if (mediaRecorder && activeRecordingButtonId === "btn-toggle-quick-record") {
+            mediaRecorder.stop();
         }
     }
 };
 
 window.toggleQuickRecordState = function() {
-    if (!quickSpeechRecognition) return;
-    
-    if (state.isQuickRecording) {
-        quickSpeechRecognition.stop();
-    } else {
-        quickSpeechRecognition.start();
-    }
+    toggleAudioRecording("quick-transcript-area", "btn-toggle-quick-record");
 };
 
 window.setQuickTaskCategory = function(category) {
@@ -697,160 +830,21 @@ function startJournalClock() {
 // ==========================================
 
 function setupVoiceDictation() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        console.warn("Speech Recognition API is not supported in this browser.");
-        document.getElementById("btn-journal-mic").classList.add("opacity-40");
-        return;
-    }
-    
-    speechRecognition = new SpeechRecognition();
-    speechRecognition.continuous = true;
-    speechRecognition.interimResults = true;
-    speechRecognition.lang = 'en-US';
-    
-    const journalInput = document.getElementById("journal-input");
-    const waveContainer = document.getElementById("voice-status-container");
-    
-    speechRecognition.onstart = () => {
-        isRecording = true;
-        voiceBaseText = journalInput.value.trim();
-        if (voiceBaseText) voiceBaseText += "\n\n"; // Cozy paragraph break
-        document.getElementById("btn-journal-mic").classList.add("border-red-500", "bg-red-950/40");
-        document.getElementById("btn-journal-mic").innerHTML = "<span class='text-xl animate-pulse'>🛑</span>";
-        waveContainer.classList.remove("hidden");
-    };
-    
-    speechRecognition.onend = () => {
-        isRecording = false;
-        voiceBaseText = journalInput.value.trim();
-        document.getElementById("btn-journal-mic").classList.remove("border-red-500", "bg-red-950/40");
-        document.getElementById("btn-journal-mic").innerHTML = "<span class='text-xl'>🎙️</span>";
-        waveContainer.classList.add("hidden");
-    };
-    
-    speechRecognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-        speechRecognition.stop();
-    };
-    
-    speechRecognition.onresult = (event) => {
-        let finalConcat = '';
-        let interimConcat = '';
-        let lastSegment = '';
-        
-        for (let i = 0; i < event.results.length; ++i) {
-            const result = event.results[i];
-            if (result.isFinal) {
-                let currentSegment = result[0].transcript.trim();
-                // Deduplicate Android cumulative speech segments
-                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
-                    finalConcat = currentSegment + " ";
-                } else {
-                    finalConcat += currentSegment + " ";
-                }
-                lastSegment = currentSegment;
-            } else {
-                interimConcat += result[0].transcript;
-            }
-        }
-        
-        journalInput.value = voiceBaseText + finalConcat + interimConcat;
-        journalInput.scrollTop = journalInput.scrollHeight;
-    };
+    console.log("Gemini MediaRecorder Transcription Engine Active");
 }
 
 function toggleVoiceRecording() {
-    if (!speechRecognition) {
-        window.showToast("Local Web Speech is not fully supported in this browser. Please use Chrome, Edge, or Safari Mobile.");
-        return;
-    }
-    
-    if (isRecording) {
-        speechRecognition.stop();
-    } else {
-        speechRecognition.start();
-    }
+    toggleAudioRecording("journal-input", "btn-journal-mic");
 }
 
 window.bindVoiceDictation = function(inputId, buttonId) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const btn = document.getElementById(buttonId);
     const input = document.getElementById(inputId);
-    
-    if (!SpeechRecognition || !btn || !input) return;
-    
-    const rec = new SpeechRecognition();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = 'en-US';
-    
-    let isRecActive = false;
-    let baseText = "";
-    
-    rec.onstart = () => {
-        isRecActive = true;
-        baseText = input.value.trim();
-        if (baseText) baseText += " ";
-        btn.classList.add("border-red-500", "bg-red-950/20");
-        btn.innerHTML = "🛑";
-        window.showToast("Listening... Speak naturally.");
-    };
-    
-    rec.onend = () => {
-        isRecActive = false;
-        baseText = input.value.trim();
-        btn.classList.remove("border-red-500", "bg-red-950/20");
-        btn.innerHTML = "🎙️";
-    };
-    
-    rec.onerror = (e) => {
-        console.error(`Dictation error on ${inputId}:`, e.error);
-        rec.stop();
-    };
-    
-    rec.onresult = (event) => {
-        let finalConcat = '';
-        let interimConcat = '';
-        let lastSegment = '';
-        
-        for (let i = 0; i < event.results.length; ++i) {
-            const result = event.results[i];
-            if (result.isFinal) {
-                let currentSegment = result[0].transcript.trim();
-                // Deduplicate Android cumulative speech segments
-                if (lastSegment && currentSegment.startsWith(lastSegment) && currentSegment.length > lastSegment.length) {
-                    finalConcat = currentSegment + " ";
-                } else {
-                    finalConcat += currentSegment + " ";
-                }
-                lastSegment = currentSegment;
-            } else {
-                interimConcat += result[0].transcript;
-            }
-        }
-        
-        input.value = baseText + finalConcat + interimConcat;
-        
-        if (inputId === "journal-input" && window.updateJournalMetrics) {
-            window.updateJournalMetrics();
-        }
-    };
+    if (!btn || !input) return;
     
     btn.onclick = (e) => {
         e.preventDefault();
-        if (isRecActive) {
-            rec.stop();
-        } else {
-            // Stop any other active speech sessions in the app
-            if (window.activeSpeechSession) {
-                try {
-                    window.activeSpeechSession.stop();
-                } catch (err) {}
-            }
-            window.activeSpeechSession = rec;
-            rec.start();
-        }
+        toggleAudioRecording(inputId, buttonId);
     };
 };
 
