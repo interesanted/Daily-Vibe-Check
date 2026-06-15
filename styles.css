@@ -509,3 +509,79 @@ main {
 .pencil-btn:active {
     transform: translateY(0) rotate(0);
 }
+
+/* ==========================================
+   ========== 10. BOTTOM NAVIGATION BAR =====
+   ========================================== */
+
+/* Add bottom padding to body to prevent bottom-nav overlap */
+body {
+    padding-bottom: 96px !important;
+}
+
+.bottom-nav-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 500px;
+    height: 64px;
+    background: rgba(254, 253, 251, 0.9);
+    backdrop-filter: blur(12px) saturate(190%);
+    -webkit-backdrop-filter: blur(12px) saturate(190%);
+    border: 1px solid rgba(217, 122, 95, 0.15);
+    border-radius: 24px;
+    box-shadow: 
+        0 10px 30px -10px rgba(58, 46, 43, 0.12),
+        0 1px 3px rgba(58, 46, 43, 0.04);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 90;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 60px;
+    height: 48px;
+    border-radius: 16px;
+    color: rgba(29, 20, 18, 0.5);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    gap: 2px;
+}
+
+.bottom-nav-tab span.nav-icon {
+    font-size: 20px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav-tab span.nav-label {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.bottom-nav-tab:hover {
+    color: var(--accent-terracotta);
+}
+
+.bottom-nav-tab.active {
+    color: var(--accent-terracotta);
+    background: rgba(217, 122, 95, 0.06);
+}
+
+.bottom-nav-tab.active span.nav-icon {
+    transform: scale(1.15) translateY(-1px);
+}
+

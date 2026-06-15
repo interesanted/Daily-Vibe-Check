@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=2.3">
+    <link rel="stylesheet" href="styles.css?v=3.0">
     
     <!-- PWA Manifest & Mobile Icons styling -->
     <link rel="manifest" href="manifest.json">
@@ -115,63 +115,97 @@
                     </div>
                 </div>
                 
-                <!-- 🎯 CENTRALIZED 2X2 BALANCED GRID DASHBOARD -->
-                <div class="grid grid-cols-2 gap-4 w-full">
-                    
-                    <!-- Journal Card -->
-                    <button onclick="navigate('JOURNAL')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
-                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">📝</span>
-                        <div class="space-y-1">
-                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Journal</span>
-                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Deep focus & speech write</span>
-                        </div>
-                    </button>
-                    
-                    <!-- Task Card -->
-                    <button onclick="navigate('TASK')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
-                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">📋</span>
-                        <div class="space-y-1">
-                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Tasks</span>
-                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Dynamic categorized list</span>
-                        </div>
-                    </button>
-                    
-                    <!-- Blip Card -->
-                    <button onclick="navigate('BLIP')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3">
-                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">⚡</span>
-                        <div class="space-y-1">
-                            <span class="block text-xs font-bold text-cozy-700 uppercase tracking-widest">Blip</span>
-                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">Micro speed-thought log</span>
-                        </div>
-                    </button>
-                    
-                    <!-- Daily AAR Card (Centered primary entry) -->
-                    <button onclick="navigate('AAR')" class="group relative flex flex-col items-center text-center p-6 rounded-2xl glass-panel glass-card space-y-3 border-cozy-500/20 bg-cozy-500/[0.02]">
-                        <span class="text-3xl block group-hover:scale-110 transition-transform duration-300">👥</span>
-                        <div class="space-y-1">
-                            <span class="block text-xs font-bold text-cozy-500 uppercase tracking-widest">Daily AAR</span>
-                            <span class="block text-[10px] text-cozy-700/60 font-light leading-normal">After Action Review & Coach</span>
-                        </div>
-                    </button>
-                    
-                </div>
-                
-                <!-- 🎇 CENTRAL VIBE CHECK CALL-TO-ACTION -->
-                <div class="pt-4 border-t border-cozy-500/10 flex flex-col space-y-4">
-                    
-                    <!-- End of Day Vibe Check Banner -->
-                    <button onclick="navigate('REVIEW')" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-xs rounded-2xl transition-all shadow-md active:scale-95 text-center uppercase tracking-[0.25em]">
-                        ✨ Compile EOD Vibe Check Review
-                    </button>
-                    
-                    <div class="flex space-x-2 w-full">
-                        <button onclick="navigate('TASK_LIST')" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-cozy-700/60 hover:text-cozy-500 transition-colors text-center">
-                            Open Checklist
-                        </button>
-                        <button onclick="navigate('CATEGORY_EXPLORER')" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-cozy-700/60 hover:text-cozy-500 transition-colors text-center">
-                            History Activity
+                <!-- Checklist Header with Status & AI Coach Button -->
+                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-3 mt-2">
+                    <h4 class="text-sm font-bold uppercase tracking-wider text-cozy-700">Today's Focus Checklist</h4>
+                    <div class="flex items-center space-x-3">
+                        <!-- Hide Completed Toggle -->
+                        <label class="flex items-center space-x-1.5 cursor-pointer bg-cozy-100 hover:bg-cozy-100/80 px-2.5 py-1 rounded-full select-none text-[9px] font-bold text-cozy-700/60 uppercase tracking-widest border border-cozy-500/10 transition-all">
+                            <input type="checkbox" id="chk-hide-completed" class="w-3.5 h-3.5 rounded border-cozy-500/25 text-cozy-500 focus:ring-cozy-500 cursor-pointer bg-white">
+                            <span>Hide Completed</span>
+                        </label>
+                        <span id="task-completed-badge" class="text-[9px] font-bold text-cozy-500 uppercase tracking-widest bg-cozy-500/10 border border-cozy-500/20 px-2.5 py-1 rounded-full">Completed: 0/0</span>
+                        
+                        <!-- Glowing AI Coach Lightbulb Button -->
+                        <button id="btn-task-coach" class="p-1.5 bg-amber-500/10 hover:bg-amber-500/25 text-amber-600 border border-amber-500/25 rounded-full hover:border-amber-500/50 transition-all select-none flex items-center justify-center relative animate-pulse" title="Ask AI Coach for Execution Strategy">
+                            <span class="text-[10px]">💡</span>
                         </button>
                     </div>
+                </div>
+                
+                <!-- Collapsible Cozy AI Task Coaching Panel -->
+                <div id="task-coach-panel" class="hidden bg-amber-500/[0.02] border border-amber-500/15 rounded-3xl p-5 relative overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-3 duration-300">
+                    <div class="absolute right-0 top-0 w-16 h-16 bg-amber-500/[0.04] rounded-full blur-xl"></div>
+                    <div class="flex justify-between items-center pb-2 border-b border-amber-500/10 mb-3 select-none">
+                        <span class="text-[9px] font-extrabold text-amber-600 uppercase tracking-widest flex items-center">
+                            <span>💡</span> <span class="ml-1">AI Execution Strategy</span>
+                        </span>
+                        <button onclick="window.toggleTaskCoachPanel(false)" class="text-xs text-cozy-700/40 hover:text-cozy-500 leading-none">&times;</button>
+                    </div>
+                    <p id="task-coach-response" class="text-xs text-cozy-700/80 leading-relaxed font-light italic">
+                        Click the lightbulb to analyze your pending list and generate a high-performance execution strategy...
+                    </p>
+                    
+                    <!-- Coach loading spinner -->
+                    <div id="task-coach-spinner" class="hidden flex items-center space-x-2 pt-2.5">
+                        <div class="custom-spinner !w-5 !h-5 !border-[2px] !border-t-amber-500 !border-amber-500/10"></div>
+                        <span class="text-[9px] text-cozy-700/50 italic font-semibold uppercase tracking-wider">AI Coach is prioritizing energy flows...</span>
+                    </div>
+                </div>
+                
+                <!-- Quick Add Task Bar -->
+                <div class="bg-white border border-cozy-500/10 p-4 rounded-3xl shadow-sm space-y-3 select-none">
+                    <div class="flex items-center space-x-2">
+                        <input id="quick-add-task-input" type="text" placeholder="Add new task instantly..." class="flex-1 p-3 rounded-xl form-input text-xs">
+                        <!-- Microphone button for quick dictating task -->
+                        <button id="btn-quick-add-task-mic" class="p-3 bg-cozy-50 hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-xl transition-all select-none text-xs" title="Dictate Task">🎙️</button>
+                        
+                        <!-- Add Button -->
+                        <button onclick="window.handleQuickAddTask()" class="px-4 py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95">
+                            + Add
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Category Select -->
+                    <div class="flex items-center justify-between text-[10px] text-cozy-700/70 font-semibold px-1">
+                        <span>Select Category:</span>
+                        <div class="flex items-center space-x-3">
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Work" checked class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Work</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Personal" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Personal</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="radio" name="quick-add-cat" value="Ideas" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
+                                <span>Ideas</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Tabs -->
+                <div id="task-list-tabs" class="flex space-x-1.5 border-b border-cozy-500/5 pb-2">
+                    <button onclick="filterTasksTab('ALL')" id="tab-task-all" class="px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all">All</button>
+                    <!-- Populated dynamically via JS categories -->
+                </div>
+                
+                <!-- Scrollable Checklist container -->
+                <div id="task-checklist-scroll" class="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- EOD Reflection Flows CTA -->
+                <div class="pt-4 border-t border-cozy-500/10 flex flex-col space-y-3">
+                    <button onclick="navigate('AAR')" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-xs rounded-2xl transition-all shadow-md active:scale-95 text-center uppercase tracking-[0.25em]">
+                        👥 Log Daily After Action Review (AAR)
+                    </button>
+                    
+                    <button onclick="navigate('REVIEW')" class="w-full py-3 bg-white hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 rounded-2xl text-xs font-semibold transition-all shadow-sm active:scale-95 text-center uppercase tracking-[0.15em]">
+                        📊 Review Weekly Vibe Report
+                    </button>
                 </div>
                 
                 <!-- 🎙️ Anchored Floating Microphone Trigger -->
@@ -461,89 +495,7 @@
                 </div>
             </div>
             
-            <!-- 📋 7. TASK LIST VIEW -->
-            <div id="view-task-list" class="page-view w-full max-w-xl mx-auto space-y-6">
-                <div class="flex items-center justify-between border-b border-cozy-500/10 pb-4">
-                    <h3 class="text-2xl serif-font italic text-cozy-700 font-medium">Task Action Items</h3>
-                    <div class="flex items-center space-x-3">
-                        <!-- Hide Completed Toggle -->
-                        <label class="flex items-center space-x-1.5 cursor-pointer bg-cozy-100 hover:bg-cozy-100/80 px-3 py-1 rounded-full select-none text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest border border-cozy-500/10 transition-all">
-                            <input type="checkbox" id="chk-hide-completed" class="w-3.5 h-3.5 rounded border-cozy-500/25 text-cozy-500 focus:ring-cozy-500 cursor-pointer bg-white">
-                            <span>Hide Completed</span>
-                        </label>
-                        <span id="task-completed-badge" class="text-[10px] font-bold text-cozy-500 uppercase tracking-widest bg-cozy-500/10 border border-cozy-500/20 px-3 py-1 rounded-full">Completed: 0/0</span>
-                        
-                        <!-- Glowing AI Coach Lightbulb Button -->
-                        <button id="btn-task-coach" class="p-1.5 bg-amber-500/10 hover:bg-amber-500/25 text-amber-600 border border-amber-500/25 rounded-full hover:border-amber-500/50 transition-all select-none flex items-center justify-center relative animate-pulse" title="Ask AI Coach for Execution Strategy">
-                            <span class="text-xs">💡</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Collapsible Cozy AI Task Coaching Panel -->
-                <div id="task-coach-panel" class="hidden bg-amber-500/[0.02] border border-amber-500/15 rounded-3xl p-5 relative overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-3 duration-300">
-                    <div class="absolute right-0 top-0 w-16 h-16 bg-amber-500/[0.04] rounded-full blur-xl"></div>
-                    <div class="flex justify-between items-center pb-2 border-b border-amber-500/10 mb-3 select-none">
-                        <span class="text-[9px] font-extrabold text-amber-600 uppercase tracking-widest flex items-center">
-                            <span>💡</span> <span class="ml-1">AI Execution Strategy</span>
-                        </span>
-                        <button onclick="window.toggleTaskCoachPanel(false)" class="text-xs text-cozy-700/40 hover:text-cozy-500 leading-none">&times;</button>
-                    </div>
-                    <p id="task-coach-response" class="text-xs text-cozy-700/80 leading-relaxed font-light italic">
-                        Click the lightbulb to analyze your pending list and generate a high-performance execution strategy...
-                    </p>
-                    
-                    <!-- Coach loading spinner -->
-                    <div id="task-coach-spinner" class="hidden flex items-center space-x-2 pt-2.5">
-                        <div class="custom-spinner !w-5 !h-5 !border-[2px] !border-t-amber-500 !border-amber-500/10"></div>
-                        <span class="text-[9px] text-cozy-700/50 italic font-semibold uppercase tracking-wider">AI Coach is prioritizing energy flows...</span>
-                    </div>
-                </div>
-                
-                <!-- Quick Add Task Bar -->
-                <div class="bg-white border border-cozy-500/10 p-4 rounded-3xl shadow-sm space-y-3 select-none">
-                    <div class="flex items-center space-x-2">
-                        <input id="quick-add-task-input" type="text" placeholder="Add new task instantly..." class="flex-1 p-3 rounded-xl form-input text-xs">
-                        <!-- Microphone button for quick dictating task -->
-                        <button id="btn-quick-add-task-mic" class="p-3 bg-cozy-50 hover:bg-cozy-100 text-cozy-700 border border-cozy-500/10 hover:border-cozy-500 rounded-xl transition-all select-none text-xs" title="Dictate Task">🎙️</button>
-                        
-                        <!-- Add Button -->
-                        <button onclick="window.handleQuickAddTask()" class="px-4 py-3 bg-cozy-500 hover:bg-cozy-500/90 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95">
-                            + Add
-                        </button>
-                    </div>
-                    
-                    <!-- Quick Category Select -->
-                    <div class="flex items-center justify-between text-[10px] text-cozy-700/70 font-semibold px-1">
-                        <span>Select Category:</span>
-                        <div class="flex items-center space-x-3">
-                            <label class="flex items-center space-x-1 cursor-pointer">
-                                <input type="radio" name="quick-add-cat" value="Work" checked class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
-                                <span>Work</span>
-                            </label>
-                            <label class="flex items-center space-x-1 cursor-pointer">
-                                <input type="radio" name="quick-add-cat" value="Personal" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
-                                <span>Personal</span>
-                            </label>
-                            <label class="flex items-center space-x-1 cursor-pointer">
-                                <input type="radio" name="quick-add-cat" value="Ideas" class="w-3 h-3 text-cozy-500 focus:ring-cozy-500 border-cozy-500/25">
-                                <span>Ideas</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Category Tabs -->
-                <div id="task-list-tabs" class="flex space-x-1.5 border-b border-cozy-500/5 pb-2">
-                    <button onclick="filterTasksTab('ALL')" id="tab-task-all" class="px-4 py-2 text-xs font-semibold rounded-lg bg-cozy-500 text-white transition-all">All</button>
-                    <!-- Populated dynamically via JS categories -->
-                </div>
-                
-                <!-- Scrollable Checklist container -->
-                <div id="task-checklist-scroll" class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
-                    <!-- Populated dynamically via JS -->
-                </div>
-            </div>
+
 
             <!-- 📁 8. HISTORY & CATEGORY EXPLORER VIEW -->
             <div id="view-category-explorer" class="page-view w-full max-w-xl mx-auto space-y-6">
@@ -743,7 +695,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=2.3')
+                navigator.serviceWorker.register('./sw.js?v=3.0')
                     .then(reg => console.log('Service Worker registered successfully:', reg.scope))
                     .catch(err => console.error('Service Worker registration failed:', err));
             });
@@ -751,7 +703,7 @@
     </script>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=2.3"></script>
+    <script type="module" src="app.js?v=3.0"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->
@@ -836,6 +788,26 @@
             </div>
         </div>
     </div>
+
+    <!-- ================= ANCHORED BOTTOM NAVIGATION BAR ================= -->
+    <nav class="bottom-nav-bar">
+        <button id="nav-btn-home" onclick="navigate('HOME')" class="bottom-nav-tab active">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button id="nav-btn-journal" onclick="navigate('JOURNAL')" class="bottom-nav-tab">
+            <span class="nav-icon">📝</span>
+            <span class="nav-label">Journal</span>
+        </button>
+        <button id="nav-btn-blip" onclick="navigate('BLIP')" class="bottom-nav-tab">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-label">Blips</span>
+        </button>
+        <button id="nav-btn-history" onclick="navigate('CATEGORY_EXPLORER')" class="bottom-nav-tab">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">History</span>
+        </button>
+    </nav>
     
 </body>
 </html>

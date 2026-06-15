@@ -173,6 +173,7 @@ window.navigate = function(viewName) {
     if (viewName === "HOME") {
         targetId = "view-home";
         showHomeBtn = false;
+        renderTaskChecklist();
     } else if (viewName === "JOURNAL") {
         targetId = "view-journal";
         startJournalClock();
@@ -193,9 +194,6 @@ window.navigate = function(viewName) {
     } else if (viewName === "REVIEW") {
         targetId = "view-review";
         toggleVibeTab("DAILY"); // Reset to daily on opening review page
-    } else if (viewName === "TASK_LIST") {
-        targetId = "view-task-list";
-        renderTaskChecklist();
     } else if (viewName === "CATEGORY_EXPLORER") {
         targetId = "view-category-explorer";
         renderInteractiveCalendar(); // Dynamic neomorphic calendar render
@@ -206,6 +204,24 @@ window.navigate = function(viewName) {
     if (targetView) {
         targetView.classList.add("active");
     }
+    
+    // Update bottom navigation bar active states
+    const tabs = {
+        "HOME": "nav-btn-home",
+        "JOURNAL": "nav-btn-journal",
+        "BLIP": "nav-btn-blip",
+        "CATEGORY_EXPLORER": "nav-btn-history"
+    };
+    Object.entries(tabs).forEach(([view, btnId]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            if (viewName === view) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        }
+    });
     
     const homeBtn = document.getElementById("btn-header-home");
     if (homeBtn) {
@@ -2049,6 +2065,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSettings();
     updateUIElements();
     initializeSupabase();
+    renderTaskChecklist();
     
     // 2. Setup voice capture APIs
     setupVoiceDictation();
