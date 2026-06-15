@@ -1275,7 +1275,7 @@ window.runTaskCoach = async function() {
             contents: prompt,
             config: {
                 temperature: 0.7,
-                maxOutputTokens: 150
+                maxOutputTokens: 1000
             }
         });
         
@@ -1528,7 +1528,7 @@ async function runAIAgileCoach() {
             contents: prompt,
             config: {
                 temperature: 0.7,
-                maxOutputTokens: 150
+                maxOutputTokens: 1000
             }
         });
         
