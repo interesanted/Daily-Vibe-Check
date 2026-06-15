@@ -357,7 +357,6 @@ async function toggleAudioRecording(inputId, buttonId) {
             if (buttonId === "btn-toggle-quick-record") {
                 state.isQuickRecording = true;
                 state.quickTranscript = "";
-                input.value = "";
                 
                 const filingActions = document.getElementById("quick-filing-actions");
                 const taskOptions = document.getElementById("quick-task-options");

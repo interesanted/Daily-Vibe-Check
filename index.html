@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=2.2">
+    <link rel="stylesheet" href="styles.css?v=2.3">
     
     <!-- PWA Manifest & Mobile Icons styling -->
     <link rel="manifest" href="manifest.json">
@@ -743,7 +743,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=2.2')
+                navigator.serviceWorker.register('./sw.js?v=2.3')
                     .then(reg => console.log('Service Worker registered successfully:', reg.scope))
                     .catch(err => console.error('Service Worker registration failed:', err));
             });
@@ -751,7 +751,7 @@
     </script>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=2.2"></script>
+    <script type="module" src="app.js?v=2.3"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->
