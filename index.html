@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=1.9">
+    <link rel="stylesheet" href="styles.css?v=2.0">
     
     <!-- PWA Manifest & Mobile Icons styling -->
     <link rel="manifest" href="manifest.json">
@@ -328,6 +328,19 @@
                     <button id="btn-blip-save" class="w-full py-4 bg-cozy-500 hover:bg-cozy-500/90 text-white font-semibold text-sm rounded-2xl transition-all shadow-md active:scale-95">
                         Capture Thought
                     </button>
+                </div>
+
+                <!-- Recent Blips Viewer -->
+                <div class="pt-6 border-t border-cozy-500/10 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-cozy-700">Your Recent Blips</h4>
+                        <span id="blips-count-badge" class="bg-cozy-500/10 text-cozy-500 px-2.5 py-0.5 rounded-full text-[9px] font-bold">0 blips</span>
+                    </div>
+                    
+                    <!-- Scrollable Blips Feed -->
+                    <div id="blip-list-feed" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                        <!-- Populated dynamically via JS -->
+                    </div>
                 </div>
             </div>
 
@@ -730,7 +743,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=1.9')
+                navigator.serviceWorker.register('./sw.js?v=2.0')
                     .then(reg => console.log('Service Worker registered successfully:', reg.scope))
                     .catch(err => console.error('Service Worker registration failed:', err));
             });
@@ -738,7 +751,7 @@
     </script>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=1.9"></script>
+    <script type="module" src="app.js?v=2.0"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->

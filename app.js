@@ -186,6 +186,7 @@ window.navigate = function(viewName) {
     } else if (viewName === "BLIP") {
         targetId = "view-blip";
         document.getElementById("blip-input").focus();
+        renderRecentBlips();
     } else if (viewName === "AAR") {
         targetId = "view-aar";
         renderAARGrid();
@@ -1359,8 +1360,83 @@ function handleSaveBlip() {
     
     pushToCloud("blips", newBlip);
     
-    window.navigate("HOME");
+    // Refresh the recent blips feed in-place so they can see their new blip instantly
+    renderRecentBlips();
 }
+
+function renderRecentBlips() {
+    const feed = document.getElementById("blip-list-feed");
+    const badge = document.getElementById("blips-count-badge");
+    if (!feed) return;
+    
+    feed.innerHTML = "";
+    const blips = state.blips || [];
+    
+    if (badge) {
+        badge.innerText = `${blips.length} blip${blips.length === 1 ? '' : 's'}`;
+    }
+    
+    if (blips.length === 0) {
+        feed.innerHTML = `
+            <div class="text-center py-8 border border-dashed border-cozy-500/10 rounded-2xl bg-white/50 text-cozy-700/40 text-[10px] font-medium uppercase tracking-wider">
+                No blips recorded yet
+            </div>
+        `;
+        return;
+    }
+    
+    blips.forEach(blip => {
+        const card = document.createElement("div");
+        card.className = "bg-white border border-cozy-500/10 p-4 rounded-xl flex justify-between items-start space-x-3 shadow-sm hover:border-cozy-500/25 transition-all text-left animate-in fade-in slide-in-from-top-1 duration-150";
+        
+        const contentBox = document.createElement("div");
+        contentBox.className = "space-y-1 flex-1 min-w-0";
+        
+        const content = document.createElement("p");
+        content.className = "text-xs text-cozy-700/80 leading-relaxed font-light break-words";
+        content.innerText = blip.content;
+        
+        const timeLbl = document.createElement("span");
+        timeLbl.className = "block text-[8px] text-cozy-700/40 uppercase tracking-widest font-semibold";
+        try {
+            const dt = new Date(blip.timestamp);
+            timeLbl.innerText = dt.toLocaleDateString() + " " + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            timeLbl.innerText = blip.timestamp;
+        }
+        
+        contentBox.appendChild(content);
+        contentBox.appendChild(timeLbl);
+        card.appendChild(contentBox);
+        
+        // Delete button
+        const delBtn = document.createElement("button");
+        delBtn.className = "text-xs text-cozy-700/35 hover:text-[#E07A5F] p-1 transition-colors select-none font-bold";
+        delBtn.innerHTML = "&times;";
+        delBtn.title = "Delete Blip";
+        delBtn.onclick = () => window.handleDeleteBlip(blip.id);
+        
+        card.appendChild(delBtn);
+        feed.appendChild(card);
+    });
+}
+
+window.handleDeleteBlip = function(blipId) {
+    if (confirm("Are you sure you want to delete this thought blip?")) {
+        // Optimistic delete
+        state.blips = state.blips.filter(b => b.id !== blipId);
+        saveLocalCache("blips");
+        renderRecentBlips();
+        window.showToast("Blip deleted successfully.");
+        
+        if (supabaseClient) {
+            supabaseClient.from("blips").delete().eq("id", blipId)
+                .then(({ error }) => {
+                    if (error) console.error("Cloud blip delete error:", error);
+                });
+        }
+    }
+};
 
 // ==========================================
 // ========== 9. AAR LOG LAYER ==============

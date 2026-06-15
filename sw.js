@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-vibe-cache-v1.9';
+const CACHE_NAME = 'daily-vibe-cache-v2.0';
 const ASSETS = [
   './',
   './index.html',
