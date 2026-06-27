@@ -693,6 +693,20 @@
                         <div class="p-2 bg-white rounded border border-cozy-500/10">AAR Logs: <span id="sync-count-aar">0</span></div>
                     </div>
                 </div>
+
+                <!-- Sync Action Button -->
+                <div class="space-y-2">
+                    <button id="btn-sync-now" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs rounded-2xl transition-all shadow-md flex items-center justify-center space-x-2">
+                        <svg id="sync-btn-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="sync-btn-text">🔄 Sync Now (Bi-directional)</span>
+                    </button>
+                    <p class="text-[9px] text-cozy-700/50 text-center leading-relaxed">
+                        Pushes local cache to Supabase and pulls remote data. Ensures all your devices are synchronized.
+                    </p>
+                </div>
             </div>
             
             <button onclick="toggleModal('modal-sync', false)" class="w-full py-4 bg-cozy-100 hover:bg-cozy-200 text-cozy-700 font-semibold text-sm rounded-2xl transition-all shadow-md">

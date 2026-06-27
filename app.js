@@ -154,6 +154,112 @@ async function pushToCloud(table, payload) {
     }
 }
 
+// Bi-directional Cloud Synchronization (LocalStorage <-> Supabase)
+async function syncWithCloud(silent = false) {
+    if (!supabaseClient) {
+        if (!silent) {
+            window.showToast("Cloud sync aborted: Supabase is not configured.");
+        }
+        return;
+    }
+    
+    let syncBtn = null;
+    let spinner = null;
+    let btnText = null;
+    if (!silent) {
+        syncBtn = document.getElementById("btn-sync-now");
+        spinner = document.getElementById("sync-btn-spinner");
+        btnText = document.getElementById("sync-btn-text");
+        if (syncBtn && spinner && btnText) {
+            syncBtn.disabled = true;
+            spinner.classList.remove("hidden");
+            btnText.innerText = "Syncing Vault...";
+        }
+    }
+    
+    try {
+        const tables = ["journals", "tasks", "blips", "aars"];
+        
+        for (const table of tables) {
+            // 1. Fetch remote data
+            const { data: remoteItems, error } = await supabaseClient.from(table).select("*");
+            if (error) {
+                console.error(`Sync error fetching table ${table}:`, error);
+                throw new Error(`Failed to fetch ${table} from cloud: ${error.message}`);
+            }
+            
+            // 2. Perform merge based on unique ID & Timestamp
+            const mergedMap = new Map();
+            
+            // Local items first
+            const localItems = state[table] || [];
+            for (const item of localItems) {
+                if (item && item.id) {
+                    mergedMap.set(item.id, { ...item });
+                }
+            }
+            
+            // Remote items second, resolving conflicts by choosing the newer timestamp
+            for (const rItem of remoteItems || []) {
+                if (!rItem || !rItem.id) continue;
+                
+                if (mergedMap.has(rItem.id)) {
+                    const lItem = mergedMap.get(rItem.id);
+                    const lTime = new Date(lItem.timestamp || 0).getTime();
+                    const rTime = new Date(rItem.timestamp || 0).getTime();
+                    if (rTime > lTime) {
+                        mergedMap.set(rItem.id, { ...rItem });
+                    }
+                } else {
+                    mergedMap.set(rItem.id, { ...rItem });
+                }
+            }
+            
+            const mergedList = Array.from(mergedMap.values());
+            
+            // Update local state and save to cache
+            state[table] = mergedList;
+            saveLocalCache(table);
+            
+            // 3. Upsert local state to remote Supabase
+            if (mergedList.length > 0) {
+                const { error: upsertError } = await supabaseClient.from(table).upsert(mergedList);
+                if (upsertError) {
+                    console.error(`Sync error upserting table ${table}:`, upsertError);
+                    throw new Error(`Failed to upload ${table} to cloud: ${upsertError.message}`);
+                }
+            }
+        }
+        
+        // Success feedback
+        const syncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timeEl = document.getElementById("footer-sync-time");
+        if (timeEl) timeEl.innerText = `Last Cloud Sync: ${syncTime}`;
+        updateSyncDashboardMetrics();
+        
+        // Re-render UI views
+        renderTaskChecklist();
+        renderRecentBlips();
+        renderHistoryFeed();
+        renderAARGrid();
+        
+        if (!silent) {
+            window.showToast("Vault synchronized successfully!");
+        }
+    } catch (err) {
+        console.error("Vault sync failed:", err);
+        if (!silent) {
+            window.showToast(`Sync Failed: ${err.message || err}`);
+        }
+    } finally {
+        if (!silent && syncBtn && spinner && btnText) {
+            syncBtn.disabled = false;
+            spinner.classList.add("hidden");
+            btnText.innerText = "🔄 Sync Now (Bi-directional)";
+        }
+    }
+}
+
 // ==========================================
 // ========== 3. VIEW ROUTER & NAVIGATION ===
 // ==========================================
@@ -2071,6 +2177,11 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeSupabase();
     renderTaskChecklist();
     
+    // Auto-sync on startup if Supabase is configured
+    if (supabaseClient) {
+        syncWithCloud(true);
+    }
+    
     // 2. Setup voice capture APIs
     setupVoiceDictation();
     
@@ -2082,6 +2193,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-info").onclick = () => window.toggleModal("modal-info", true);
     document.getElementById("btn-settings").onclick = () => window.toggleModal("modal-settings", true);
     document.getElementById("btn-sync-dashboard").onclick = () => window.toggleModal("modal-sync", true);
+    
+    // Bind Sync Now Button
+    const btnSyncNow = document.getElementById("btn-sync-now");
+    if (btnSyncNow) {
+        btnSyncNow.onclick = () => syncWithCloud(false);
+    }
     
     // Inputs & Forms Actions
     document.getElementById("btn-journal-save").onclick = handleSaveJournal;
@@ -2202,5 +2319,9 @@ document.addEventListener("DOMContentLoaded", () => {
         saveLocalSettings();
         window.toggleModal("modal-settings", false);
         window.showToast("Application settings and keys updated successfully!");
+        
+        if (supabaseClient) {
+            syncWithCloud(false);
+        }
     };
 });
