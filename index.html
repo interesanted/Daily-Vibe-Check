@@ -30,7 +30,7 @@
     </script>
     
     <!-- Custom Style Sheet with Cache Buster -->
-    <link rel="stylesheet" href="styles.css?v=3.0">
+    <link rel="stylesheet" href="styles.css?v=3.1">
     
     <!-- PWA Manifest & Mobile Icons styling -->
     <link rel="manifest" href="manifest.json">
@@ -598,6 +598,16 @@
                     </div>
                 </div>
                 
+                <!-- Google Gemini Model Selection -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Google Gemini Model</label>
+                    <select id="settings-gemini-model" class="w-full p-3 rounded-xl form-input text-xs bg-white text-cozy-700">
+                        <option value="gemini-1.5-flash">gemini-1.5-flash (Stable & Highly Recommended)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Cost-Efficient)</option>
+                        <option value="gemini-3.5-flash">gemini-3.5-flash (Preview / State of the Art)</option>
+                    </select>
+                </div>
+                
                 <!-- Supabase Project URL -->
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-cozy-700/60 uppercase tracking-widest">Supabase Database URL (Optional)</label>
@@ -695,7 +705,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=3.0')
+                navigator.serviceWorker.register('./sw.js?v=3.1')
                     .then(reg => console.log('Service Worker registered successfully:', reg.scope))
                     .catch(err => console.error('Service Worker registration failed:', err));
             });
@@ -703,7 +713,7 @@
     </script>
 
     <!-- ================= MAIN APP SCRIPT ================= -->
-    <script type="module" src="app.js?v=3.0"></script>
+    <script type="module" src="app.js?v=3.1"></script>
     
     <!-- ======================================================= -->
     <!-- ============ QUICK-DICTATE SLIDING DRAWER ============= -->

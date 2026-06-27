@@ -7,6 +7,7 @@ import { GoogleGenAI } from "https://esm.sh/@google/genai";
 let state = {
     username: "Kyle",
     gemini_api_key: "",
+    gemini_model: "gemini-1.5-flash",
     supabase_url: "",
     supabase_key: "",
     journals: [],
@@ -67,6 +68,7 @@ function loadSettings() {
             const parsed = JSON.parse(storedSettings);
             state.username = parsed.username || "Kyle";
             state.gemini_api_key = parsed.gemini_api_key || "";
+            state.gemini_model = parsed.gemini_model || "gemini-1.5-flash";
             state.supabase_url = parsed.supabase_url || "";
             state.supabase_key = parsed.supabase_key || "";
         }
@@ -90,6 +92,7 @@ function saveLocalSettings() {
     const settings = {
         username: state.username,
         gemini_api_key: state.gemini_api_key,
+        gemini_model: state.gemini_model,
         supabase_url: state.supabase_url,
         supabase_key: state.supabase_key
     };
@@ -248,6 +251,7 @@ window.toggleModal = function(modalId, show) {
                 // Populate current settings values
                 document.getElementById("settings-user-input").value = state.username;
                 document.getElementById("settings-gemini-input").value = state.gemini_api_key;
+                document.getElementById("settings-gemini-model").value = state.gemini_model || "gemini-1.5-flash";
                 document.getElementById("settings-supa-url").value = state.supabase_url;
                 document.getElementById("settings-supa-key").value = state.supabase_key;
             } else if (modalId === "modal-sync") {
@@ -512,7 +516,7 @@ async function transcribeAudioWithGemini(base64Data, mimeType) {
     
     const ai = new GoogleGenAI({ apiKey: apiKey });
     const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: state.gemini_model || 'gemini-1.5-flash',
         contents: [
             {
                 inlineData: {
@@ -1280,7 +1284,7 @@ window.runTaskCoach = async function() {
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: state.gemini_model || 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.7,
@@ -1533,7 +1537,7 @@ async function runAIAgileCoach() {
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: state.gemini_model || 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.7,
@@ -1639,7 +1643,7 @@ async function compileWeeklyVibeReport() {
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: state.gemini_model || 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
@@ -1802,7 +1806,7 @@ async function compileVibeCheck() {
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: state.gemini_model || 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
@@ -2191,6 +2195,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-settings-save").onclick = () => {
         state.username = document.getElementById("settings-user-input").value.trim() || "Kyle";
         state.gemini_api_key = document.getElementById("settings-gemini-input").value.trim();
+        state.gemini_model = document.getElementById("settings-gemini-model").value || "gemini-1.5-flash";
         state.supabase_url = document.getElementById("settings-supa-url").value.trim();
         state.supabase_key = document.getElementById("settings-supa-key").value.trim();
         
