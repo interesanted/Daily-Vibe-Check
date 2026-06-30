@@ -270,6 +270,12 @@ window.navigate = function(viewName) {
         speechRecognition.stop();
     }
     
+    // Save draft if navigating away from JOURNAL view
+    const currentActiveView = document.querySelector(".page-view.active");
+    if (currentActiveView && currentActiveView.id === "view-journal") {
+        saveJournalDraft();
+    }
+    
     // Smooth transition between screens
     const allViews = document.querySelectorAll(".page-view");
     allViews.forEach(view => {
@@ -289,6 +295,15 @@ window.navigate = function(viewName) {
         // Load user preferred paper style and update live metrics
         const preferredStyle = localStorage.getItem("vibe_paper_style") || "LINED";
         window.setPaperStyle(preferredStyle);
+        
+        // Restore draft if any exists and editor is empty
+        const savedDraft = localStorage.getItem("vibe_journal_draft");
+        const textarea = document.getElementById("journal-input");
+        if (textarea && savedDraft && !textarea.value.trim()) {
+            textarea.value = savedDraft;
+            window.showToast("📝 Restored unsaved journal draft.");
+        }
+        
         window.updateJournalMetrics();
     } else if (viewName === "TASK") {
         targetId = "view-task";
@@ -566,6 +581,7 @@ async function toggleAudioRecording(inputId, buttonId) {
                     
                     if (inputId === "journal-input" && window.updateJournalMetrics) {
                         window.updateJournalMetrics();
+                        saveJournalDraft();
                     }
                 } else {
                     window.showToast("⚠️ Gemini couldn't hear any speech. Try again.");
@@ -977,6 +993,18 @@ window.bindVoiceDictation = function(inputId, buttonId) {
 // ========== 6. JOURNAL CORE LAYER =========
 // ==========================================
 
+let draftSaveTimeout = null;
+function saveJournalDraft() {
+    const textarea = document.getElementById("journal-input");
+    if (!textarea) return;
+    localStorage.setItem("vibe_journal_draft", textarea.value);
+}
+
+function debouncedSaveJournalDraft() {
+    if (draftSaveTimeout) clearTimeout(draftSaveTimeout);
+    draftSaveTimeout = setTimeout(saveJournalDraft, 500);
+}
+
 window.setPaperStyle = function(style) {
     const textarea = document.getElementById("journal-input");
     if (!textarea) return;
@@ -1030,6 +1058,7 @@ window.insertFormatting = function(prefix, suffix = "") {
     textarea.selectionEnd = start + prefix.length + selectedText.length;
     
     window.updateJournalMetrics();
+    saveJournalDraft();
 };
 
 window.updateJournalMetrics = function() {
@@ -1078,6 +1107,7 @@ function handleSaveJournal() {
     
     // Clear Input
     input.value = "";
+    localStorage.removeItem("vibe_journal_draft");
     
     // Trigger optimistic success notice
     window.showToast("Journal logged successfully in local cache!");
@@ -2206,8 +2236,20 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const journalInput = document.getElementById("journal-input");
     if (journalInput) {
-        journalInput.addEventListener("input", window.updateJournalMetrics);
+        journalInput.addEventListener("input", () => {
+            window.updateJournalMetrics();
+            debouncedSaveJournalDraft();
+        });
     }
+
+    // Guard page close/refresh if unsaved draft exists
+    window.addEventListener("beforeunload", (e) => {
+        const input = document.getElementById("journal-input");
+        if (input && input.value.trim() !== "") {
+            e.preventDefault();
+            e.returnValue = "";
+        }
+    });
     
     document.getElementById("btn-task-save").onclick = handleSaveTask;
     document.getElementById("btn-blip-save").onclick = handleSaveBlip;
